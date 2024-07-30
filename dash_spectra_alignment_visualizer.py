@@ -167,6 +167,9 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
     prevent_initial_call = True
 )
 def update_clicked_peak(clickData, current_data):
+    # loading spectra
+    peak_sets, spec_dic, max_mz, max_size = _load_peaksets()
+
     for i, data in enumerate(clickData):
         if data and 'points' in data:
             point = data['points'][0]
