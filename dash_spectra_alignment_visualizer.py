@@ -13,7 +13,6 @@ from plotly.subplots import make_subplots
 from typing import List, Tuple, Dict, Set
 import collections
 import json
-import os
 
 SpectrumTuple = collections.namedtuple('SpectrumTuple', ['scan', 'precursor_mz', 'precursor_charge', 'mz', 'intensity'])
 PeakTuple = collections.namedtuple('PeakTuple', ['scan_num', 'peak_idx'])
