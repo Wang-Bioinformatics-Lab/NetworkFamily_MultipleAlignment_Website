@@ -59,15 +59,6 @@ dash_app.layout = html.Div([
     html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center'}),
     dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', style={'width': '50%'}),
     html.Button('Display Spectra', id='display-button', n_clicks=0),
-    # dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', style={'width': '50%'}),
-    # dcc.Dropdown(
-    #     id='sort-order-dropdown',
-    #     options=[
-    #         {'label': 'Ascending by Precursor m/z', 'value': 'asc'},
-    #         {'label': 'Descending by Precursor m/z', 'value': 'desc'}
-    #     ],
-    #     placeholder='Select sorting order'
-    # ),
     html.Div(id='file-info'),
     html.Div(id='largest-sets'),
     html.Div(id='graphs-container', style={'padding': '0', 'margin': '0'}),

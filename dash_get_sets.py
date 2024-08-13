@@ -445,6 +445,10 @@ def add_pairs(transitive_sets, new_sets):
     #         print(mz)
     return transitive_sets
 
+# function to convert peak tuple to tuple
+def peak_tuple_to_tuple(peak_tuple):
+    return (int(peak_tuple.scan_num), int(peak_tuple.peak_idx))
+
 def data_for_json (final_sets, filtered_spec_dic, path):
     # reorder spec_dic to be in topological order
     filtered_spec_dic = {key: filtered_spec_dic[key] for key in path}
@@ -461,14 +465,10 @@ def data_for_json (final_sets, filtered_spec_dic, path):
             "intensity": s.intensity.tolist() # convert to list
         }
 
-    # convert sets (list of lists with named tuple) to list of tuples
-    # function to convert peak tuple to tuple
-    def peak_tuple_to_tuple(peak_tuple):
-        return (int(peak_tuple.scan_num), int(peak_tuple.peak_idx))
-
     # change sets to list of lists, each element in the list is a tuple
     json_sets = []
     for match_list in final_sets:
+        # convert sets (list of lists with named tuple) to list of tuples
         json_match_list = [peak_tuple_to_tuple(peak_tuple) for peak_tuple in match_list]
         json_sets.append(json_match_list)
 
@@ -505,7 +505,6 @@ def process_and_save_json(n_clicks, task_id, component_number):
     new_pairs = new_matches(topo_path, filtered_spec_dic)
     final_sets = add_pairs(transitive_sets, new_pairs)
     json_sets, new_spec_dic = data_for_json(final_sets, filtered_spec_dic, topo_path)
-    # component, json_sets, new_spec_dic = get_final_sets(int(component_number), filtered_spec_dic, df_comp)
 
     with open(SAVE_PATH, 'w') as f:
         # json.dump((component, json_sets, new_spec_dic), f)
