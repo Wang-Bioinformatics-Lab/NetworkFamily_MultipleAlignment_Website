@@ -201,7 +201,9 @@ def display_spectra(n_clicks, clicked_peak, file_name):
         graphs.append(
             html.Div([
                 html.Div(
-                    dcc.Markdown(f'Spec {scan}  \nPrecur m/z: {spec_dic[scan].precursor_mz:.3f}'),
+                    dcc.Markdown(
+                    f'Spec {scan}  Precur m/z: {spec_dic[scan].precursor_mz:.3f}'),
+                    # f'Spec {scan}'),
                     style={
                         'transform': 'rotate(0deg)',
                         'height': '100px',
