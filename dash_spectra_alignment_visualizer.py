@@ -31,9 +31,9 @@ dash_app.title = "Dash Interface 1"
 def tuple_to_peak_tuple(tup):
     return PeakTuple(*tup)
 
-def _load_peaksets():
+def _load_peaksets(file_name):
     # read in data from json file
-    with open('saved.json', 'r') as openfile:
+    with open(file_name, 'r') as openfile:
         component, json_sets, new_spec_dic = json.load(openfile)
 
     # add peak tuples to sets
@@ -58,6 +58,17 @@ dash_app.layout = html.Div([
     html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center'}),
     dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', style={'width': '50%'}),
     html.Button('Display Spectra', id='display-button', n_clicks=0),
+    dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', style={'width': '50%'}),
+    dcc.Dropdown(
+        id='sort-order-dropdown',
+        options=[
+            {'label': 'Default (Topological Sort) Order', 'value': 'original'},
+            {'label': 'Ascending by Precursor m/z', 'value': 'asc'},
+            {'label': 'Descending by Precursor m/z', 'value': 'desc'},
+            {'label': 'Custom Order', 'value': 'custom'}
+        ],
+        placeholder='Select sorting order'
+    ),
     html.Div(id='file-info'),
     html.Div(id='largest-sets'),
     html.Div(id='graphs-container', style={'padding': '0', 'margin': '0'}),
@@ -158,30 +169,41 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
     Output('clicked-peak-store', 'data'),
     Input({'type': 'spectrum-bar', 'index': ALL}, 'clickData'),
     State('clicked-peak-store', 'data'),
+    State('file-name-input', 'value'),
+    State('custom-order-input', 'value'),
     prevent_initial_call=True
 )
-def update_clicked_peak(clickData, current_data):
+def update_clicked_peak(clickData, current_data, file_name, custom_order):
     # loading spectra
-    peak_sets, spec_dic, max_mz, max_size = _load_peaksets()
+    peak_sets, spec_dic, max_mz, max_size = _load_peaksets(file_name)
+
+    custom_order_list = [int(scan) for scan in custom_order.split(',')]
+    ordered_spec_dic = {scan: spec_dic[scan] for scan in custom_order_list if scan in spec_dic}
 
     for i, data in enumerate(clickData):
         if data and 'points' in data:
             point = data['points'][0]
-            spec_id = list(spec_dic.keys())[i]
+            # spec_id = list(spec_dic.keys())[i]
+            spec_id = list(ordered_spec_dic.keys())[i]
             peak_idx = point['pointIndex']
             return {'scan': spec_id, 'peak_idx': peak_idx}
     return current_data
 
 # callback for displaying spectra
 @dash_app.callback(
-    [Output('largest-sets', 'children'), Output('graphs-container', 'children'), Output('highlighted-sets', 'data')],
+    [Output('largest-sets', 'children'), 
+     Output('graphs-container', 'children'), 
+     Output('highlighted-sets', 'data'),
+     Output('custom-order-input', 'value')],
     Input('display-button', 'n_clicks'),
     Input('clicked-peak-store', 'data'),
     State('file-name-input', 'value'),
+    State('custom-order-input', 'value'),
+    State('sort-order-dropdown', 'value'),
     prevent_initial_call=True
 )
-def display_spectra(n_clicks, clicked_peak, file_name):    
-    peak_sets, spec_dic, max_mz, max_size = _load_peaksets()
+def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order):    
+    peak_sets, spec_dic, max_mz, max_size = _load_peaksets(file_name)
 
     # get largest sets
     largest_sets = sorted(peak_sets, key=len, reverse=True)[:3]
@@ -192,9 +214,30 @@ def display_spectra(n_clicks, clicked_peak, file_name):
         peaks_info = ', '.join([f'Scan: {p[0]} Peak Index: {p[1]}' for p in s])
         largest_sets_info.append(html.Div(f'Largest Set {i}, size {len(s)}: {peaks_info}'))
 
+    ordered_spec_dic = spec_dic
+
+    if sort_order and sort_order == 'original':
+        ordered_spec_dic = spec_dic
+    elif sort_order == 'desc':
+        ordered_spec_dic = dict(sorted(ordered_spec_dic.items(), key=lambda item: item[1].precursor_mz, reverse=(sort_order == 'desc')))
+    elif sort_order == 'asc':    
+        ordered_spec_dic = dict(sorted(ordered_spec_dic.items(), key=lambda item: item[1].precursor_mz, reverse=(sort_order == 'desc')))
+    elif sort_order == 'custom':
+        # get custom order
+        if custom_order:
+            try:
+                custom_order_list = [int(scan) for scan in custom_order.split(',')]
+            except ValueError:
+                custom_order_list = []
+        else:
+            custom_order_list = []
+        ordered_spec_dic = {scan: spec_dic[scan] for scan in custom_order_list if scan in spec_dic}
+    else:
+        ordered_spec_dic = spec_dic
+
     graphs = []
 
-    for i, (scan, spectrum) in enumerate(spec_dic.items()):
+    for i, (scan, spectrum) in enumerate(ordered_spec_dic.items()):
         # only show x axis label for the last spectrum
         show_x_labels = (i == len(spec_dic) - 1)
         fig = make_spectrum_fig(spectrum, scan, largest_sets, clicked_peak, show_x_labels, max_mz, peak_sets, spec_dic)
@@ -220,7 +263,11 @@ def display_spectra(n_clicks, clicked_peak, file_name):
             ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '0px'})
         )
 
-    return largest_sets_info, graphs, largest_sets
+    # Get scan numbers in the current order
+    current_order = list(ordered_spec_dic.keys())
+    current_order_str = ', '.join(map(str, current_order))
+
+    return largest_sets_info, graphs, largest_sets, current_order_str
 
 if __name__ == '__main__':
     app.run(debug=True)
