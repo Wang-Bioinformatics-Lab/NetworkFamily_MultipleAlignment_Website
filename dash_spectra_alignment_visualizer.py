@@ -180,7 +180,7 @@ def update_clicked_peak(clickData, current_data):
     State('file-name-input', 'value'),
     prevent_initial_call=True
 )
-def display_spectra(n_clicks, clicked_peak, file_name):    
+def display_spectra(n_clicks, clicked_peak):    
     peak_sets, spec_dic, max_mz, max_size = _load_peaksets()
 
     # get largest sets
