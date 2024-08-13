@@ -213,44 +213,6 @@ def get_data(component, task_id):
 
 # function to get mst and do topo sort
 def get_topo_path(filtered_spec_dic, df_comp, scan_nums):
-    # constructed network from edge list
-    # G_all_pairs = nx.from_pandas_edgelist(df_comp, "CLUSTERID1", "CLUSTERID2", "Cosine")
-
-    # G_all_pairs = nx.from_pandas_edgelist(df_comp, "CLUSTERID1", "CLUSTERID2", ["Cosine"])
-
-    # # Adjust edge weights to 1 - Cosine
-    # for u, v, data in G_all_pairs.edges(data=True):
-    #     data['weight'] = 1 - data['Cosine']
-
-    # # Verify the change in edge weights (optional)
-    # for u, v, data in G_all_pairs.edges(data=True):
-    #     print(f"Edge ({u}, {v}) has weight {data['weight']}")
-    
-    # print(G_all_pairs.number_of_nodes())
-            
-    # # kruskal's min spanning tree algorithm
-    # mst = nx.minimum_spanning_tree(G_all_pairs)
-
-    # scans = []
-    # for scan in scan_nums:
-    #     scans.append(int(scan))
-
-    # print(type(scans))
-    # scores = []
-    # idx1 = 0
-
-    # # calculate cosine scores
-    # while (idx1 < len(scans) - 1):
-    #     idx2 = idx1 + 1
-    #     spec1 = filtered_spec_dic[scans[idx1]]
-    #     while (idx2 < len(scans)):
-    #         spec2 = filtered_spec_dic[scans[idx2]]
-    #         cosine_score, matches = _cosine_fast(spec1, spec2, 0.1, True)
-    #         scores.append([scans[idx1], scans[idx2], cosine_score])
-    #         idx2 = idx2 + 1
-
-    #     idx1 = idx1 + 1
-
     pairwise_cosine_scores = []
     
     # Get all pairs of scan numbers
