@@ -247,13 +247,13 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
                 html.Div(
                     dcc.Markdown(
                     f'Scan {scan}  Precur m/z: {spec_dic[scan].precursor_mz:.3f}'),
-                    # f'Spec {scan}'),
                     style={
                         'transform': 'rotate(0deg)',
                         'height': '100px',
                         'margin-right': '10px',
                         'white-space': 'nowrap',
-                        'text-align': 'right'  # adjust if needed
+                        'text-align': 'right',  # adjust if needed
+                        'width': '230px'
                     }
                 ),
                 dcc.Graph(
@@ -264,7 +264,7 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
             ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '0px'})
         )
 
-    # Get scan numbers in the current order
+    # get scan numbers in the current order
     current_order = list(ordered_spec_dic.keys())
     current_order_str = ', '.join(map(str, current_order))
 
