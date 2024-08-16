@@ -56,8 +56,10 @@ def _load_peaksets(file_name):
 
 dash_app.layout = html.Div([
     html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center'}),
+    
     dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', style={'width': '50%'}),
     html.Button('Display Spectra', id='display-button', n_clicks=0),
+
     dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', style={'width': '50%'}),
     dcc.Dropdown(
         id='sort-order-dropdown',
@@ -269,6 +271,19 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
     current_order_str = ', '.join(map(str, current_order))
 
     return largest_sets_info, graphs, largest_sets, current_order_str
+
+# Setting file-name-input value from the url search parameters
+@dash_app.callback(
+    Output('file-name-input', 'value'),
+    Input('url', 'search')
+)
+def update_file_name(search):
+    return search[1:] if search else ''
+
+    # Parsing out the search field to grab the file name
+    return "XXX"
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
