@@ -246,7 +246,7 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
             html.Div([
                 html.Div(
                     dcc.Markdown(
-                    f'Spec {scan}  Precur m/z: {spec_dic[scan].precursor_mz:.3f}'),
+                    f'Scan {scan}  Precur m/z: {spec_dic[scan].precursor_mz:.3f}'),
                     # f'Spec {scan}'),
                     style={
                         'transform': 'rotate(0deg)',

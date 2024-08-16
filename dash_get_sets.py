@@ -267,7 +267,7 @@ def get_topo_path(filtered_spec_dic, df_comp, scan_nums):
 
     # topological sort
     topo_sorted_nodes = list(nx.topological_sort(bfs))
-    # print(topo_sorted_nodes)
+    print(topo_sorted_nodes)
 
     # store the alignment results between connected nodes in topological sorting in a dictionary
     alignment_results = {}
@@ -283,7 +283,7 @@ def get_topo_path(filtered_spec_dic, df_comp, scan_nums):
         score, peak_matches = _cosine_fast(spec1, spec2, 0.1, True)
         # store results
         alignment_results[spec1_idx, spec2_idx] = peak_matches
-        # print(f"scans: {spec1_idx} - {spec2_idx} and match indices: {peak_matches}")
+        print(f"scans: {spec1_idx} - {spec2_idx} and match indices: {peak_matches}")
         idx = idx + 1
 
     return topo_sorted_nodes, alignment_results
@@ -374,6 +374,8 @@ def add_pairs(transitive_sets, new_sets):
         for peak in current_set:
             peak_to_set[(peak.scan_num, peak.peak_idx)] = set_idx
 
+    sets_to_remove = set()
+
     for pair in new_sets:
         peak1 = (pair[0].scan_num, pair[0].peak_idx)
         peak2 = (pair[1].scan_num, pair[1].peak_idx)
@@ -381,16 +383,42 @@ def add_pairs(transitive_sets, new_sets):
         set1 = peak_to_set.get(peak1)
         set2 = peak_to_set.get(peak2)
         
+        # if the first peak is in a set but the second is not
         if set1 is not None and set2 is None:
+            # add the peak if the scan num is not already in the set
             if pair[1].scan_num not in [peak.scan_num for peak in transitive_sets[set1]]:
                 transitive_sets[set1].append(pair[1])
                 peak_to_set[peak2] = set1
+
+        # if the second peak is in a set but the first is not
+        elif set1 is None and set2 is not None:
+            # add the peak if the scan num is not already in the set
+            if pair[0].scan_num not in [peak.scan_num for peak in transitive_sets[set2]]:
+                transitive_sets[set2].append(pair[0])
+                peak_to_set[peak1] = set2
         
         elif set1 is None and set2 is None:
             new_set_idx = len(transitive_sets)
             transitive_sets.append([pair[0], pair[1]])
             peak_to_set[peak1] = new_set_idx
             peak_to_set[peak2] = new_set_idx
+        
+        # if both peaks are in sets already
+        elif set1 is not None and set2 is not None:
+            # check if any of the scan nums in set1 are in set 2 and if they are not, merge the sets
+            set1_scans = {peak.scan_num for peak in transitive_sets[set1]}
+            set2_scans = {peak.scan_num for peak in transitive_sets[set2]}
+            if not set1_scans.intersection(set2_scans):
+                transitive_sets[set1].extend(transitive_sets[set2])
+                # update peak_to_set mapping for the merged set
+                for peak in transitive_sets[set2]:
+                    peak_to_set[(peak.scan_num, peak.peak_idx)] = set1
+        
+                # remove set2
+                sets_to_remove.add(set2)
+
+    # get final sets
+    transitive_sets = [s for i, s in enumerate(transitive_sets) if i not in sets_to_remove]
 
     # remove empty sets and duplicates
     transitive_sets = [list({(peak.scan_num, peak.peak_idx) for peak in t_set}) for t_set in transitive_sets if t_set]
