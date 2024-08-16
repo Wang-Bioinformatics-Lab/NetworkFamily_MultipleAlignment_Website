@@ -7,6 +7,7 @@ services:
     container_name: multiplealignment-multiple-dash
     volumes:
       - ./logs:/app/logs:rw
+      - ./temp:/app/temp:rw
     networks:
       - default
       - nginx-net
