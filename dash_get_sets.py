@@ -465,9 +465,9 @@ def data_for_json (final_sets, filtered_spec_dic, path):
     return json_sets, new_spec_dic
 
 dash_app = dash.Dash(
-    name="spectraalignment",
+    name="setscreation",
     server=app,
-    url_base_pathname="/spectraalignment/",
+    url_base_pathname="/setscreation/",
     external_stylesheets=[dbc.themes.BOOTSTRAP],
 )
 
