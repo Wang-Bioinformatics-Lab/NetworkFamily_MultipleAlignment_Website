@@ -59,61 +59,58 @@ dash_app.layout = html.Div([
     html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center'}),
 
     dbc.Card(
-        dbc.CardBody([
-            dbc.Row([
-                dbc.Col(html.H3("Data Input", className="card-title")),
-                dbc.Col(dbc.Button("Show/Hide", id="toggle-button", color="secondary", size="sm"), width="auto")
-            ], align="center"),
-
-            dbc.Collapse(
+        [
+            # header section
+            dbc.CardHeader(
                 dbc.Row([
-                    dbc.Col([
-                        html.Label("File Name", htmlFor='file-name-input', style={'fontSize': '24px'}),
-                        dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', 
-                                  style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
-                    ], width=12, style={'margin-bottom': '10px'}),
+                    dbc.Col(html.H3("Data Input", className="card-title")),
+                    dbc.Col(dbc.Button("Show/Hide", id="toggle-button", color="secondary", size="sm"), width="auto")
+                ], align="center"),
+                style={'border-bottom': '1px solid #ccc'} 
+            ),
 
-                    dbc.Col([
-                        html.Label("Custom Order (Optional)", htmlFor='custom-order-input',  style={'fontSize': '24px'}),
-                        dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', 
-                                  style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
-                    ], width=12, style={'margin-bottom': '10px'}),
-                    
-                    dbc.Col([
-                        html.Label("Select Sorting Order", htmlFor='sort-order-dropdown', style={'fontSize': '24px'}),
-                        dcc.Dropdown(
-                            id='sort-order-dropdown',
-                            options=[
-                                {'label': 'Default (Topological Sort) Order', 'value': 'original'},
-                                {'label': 'Ascending by Precursor m/z', 'value': 'asc'},
-                                {'label': 'Descending by Precursor m/z', 'value': 'desc'},
-                                {'label': 'Custom Order', 'value': 'custom'}
-                            ],
-                            placeholder='Select sorting order', 
-                            style={'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}
-                        ),
-                    ], width=12, style={'margin-bottom': '10px'}),
-                ]),
+            # body
+            dbc.Collapse(
+                dbc.CardBody(
+                    dbc.Row([
+                        dbc.Col([
+                            html.Label("File Name", htmlFor='file-name-input', style={'fontSize': '24px'}),
+                            dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', 
+                                      style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
+                        ], width=12, style={'margin-bottom': '10px'}),
+
+                        dbc.Col([
+                            html.Label("Custom Order (Optional)", htmlFor='custom-order-input',  style={'fontSize': '24px'}),
+                            dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', 
+                                      style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
+                        ], width=12, style={'margin-bottom': '10px'}),
+
+                        dbc.Col([
+                            html.Label("Select Sorting Order (Optional)", htmlFor='sort-order-dropdown', style={'fontSize': '24px'}),
+                            dcc.Dropdown(
+                                id='sort-order-dropdown',
+                                options=[
+                                    {'label': 'Default (Topological Sort) Order', 'value': 'original'},
+                                    {'label': 'Ascending by Precursor m/z', 'value': 'asc'},
+                                    {'label': 'Descending by Precursor m/z', 'value': 'desc'},
+                                    {'label': 'Custom Order', 'value': 'custom'}
+                                ],
+                                placeholder='Select sorting order', 
+                                style={'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}
+                            ),
+                        ], width=12, style={'margin-bottom': '10px'}),
+                    ]),
+                    style={'background-color': '#ffffff', 'padding': '20px'}  # white background
+                ),
                 id="collapse-input",
                 is_open=True,
             ),
-        ]),
-        style={'background-color': '#f8f9fa', 'border': '1px solid #ccc', 'padding': '10px', 'margin-bottom': '20px'}
+        ],
+        style={'border': '1px solid #ccc', 'margin-bottom': '20px'}
     ),
 
     dbc.Col(dbc.Button('Display Spectra', id='display-button', n_clicks=0, color="primary", className="ml-3"), width="auto"),
 
-    # dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', style={'width': '50%'}),
-    # dcc.Dropdown(
-    #     id='sort-order-dropdown',
-    #     options=[
-    #         {'label': 'Default (Topological Sort) Order', 'value': 'original'},
-    #         {'label': 'Ascending by Precursor m/z', 'value': 'asc'},
-    #         {'label': 'Descending by Precursor m/z', 'value': 'desc'},
-    #         {'label': 'Custom Order', 'value': 'custom'}
-    #     ],
-    #     placeholder='Select sorting order'
-    # ),
     html.Div(id='file-info'),
     html.Div(id='largest-sets'),
     html.Div(id='graphs-container', style={'padding': '0', 'margin': '0'}),
