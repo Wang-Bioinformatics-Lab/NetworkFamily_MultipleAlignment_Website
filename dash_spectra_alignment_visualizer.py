@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State, ALL
 import collections
 import json
+import os
 
 from config import SETS_TEMP_PATH
 
@@ -55,6 +56,7 @@ def _load_peaksets(file_name):
     
 
 dash_app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
     html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center'}),
 
     # dbc card for data input/custom order/selection dropdown
@@ -291,6 +293,8 @@ def update_clicked_peak(clickData, current_data, file_name, custom_order):
 def display_set_info(clicked_peak, file_name, custom_order):
     if clicked_peak['scan'] is None or clicked_peak['peak_idx'] is None:
         return "Click on a peak to see its set information."
+    
+    file_name = os.path.join(SETS_TEMP_PATH, file_name)
 
     # load data again 
     peak_sets, spec_dic, max_mz, max_size = _load_peaksets(file_name)
@@ -362,6 +366,8 @@ def display_set_info(clicked_peak, file_name, custom_order):
 )
 
 def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order):    
+    file_name = os.path.join(SETS_TEMP_PATH, file_name)
+
     peak_sets, spec_dic, max_mz, max_size = _load_peaksets(file_name)
 
     # get largest sets
@@ -434,10 +440,14 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
     Input('url', 'search')
 )
 def update_file_name(search):
-    return search[1:] if search else ''
 
-    # Parsing out the search field to grab the file name
-    return "XXX"
+    try:
+        # Parsing out the search field to grab the file name
+        import urllib.parse
+        params_dict = urllib.parse.parse_qs(search[1:])
+        return params_dict['filename'][0]
+    except:
+        return ""
 
 # callback to toggle collapse for data input
 @dash_app.callback(
