@@ -11,6 +11,8 @@ from dash.dependencies import Input, Output, State, ALL
 import collections
 import json
 
+from config import SETS_TEMP_PATH
+
 SpectrumTuple = collections.namedtuple('SpectrumTuple', ['scan', 'precursor_mz', 'precursor_charge', 'mz', 'intensity'])
 PeakTuple = collections.namedtuple('PeakTuple', ['scan_num', 'peak_idx'])
 
@@ -261,6 +263,9 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
     prevent_initial_call=True
 )
 def update_clicked_peak(clickData, current_data, file_name, custom_order):
+    # Cleaning up the filename
+    file_name = os.path.join(SETS_TEMP_PATH, file_name)
+
     # loading spectra
     peak_sets, spec_dic, max_mz, max_size = _load_peaksets(file_name)
 

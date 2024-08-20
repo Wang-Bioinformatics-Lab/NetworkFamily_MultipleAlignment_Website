@@ -6,6 +6,7 @@ import collections
 from typing import List, Tuple, Dict, Set
 import json
 import uuid
+from config import SETS_TEMP_PATH
 
 import dash
 from dash import dcc, html
@@ -38,7 +39,7 @@ dash_app.layout = html.Div([
     html.Div(id='output-path')
 ])
 
-SETS_TEMP_PATH = "./temp/sets"
+
 
 @dash_app.callback(
     Output('output-path', 'children'),
