@@ -72,7 +72,7 @@ dash_app.layout = html.Div([
                 dbc.CardBody(
                     dbc.Row([
                         dbc.Col([
-                            html.Label("File Name", htmlFor='file-name-input', style={'fontSize': '24px'}),
+                            html.Label("File Name", htmlFor='file-name-input'),
                             dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', 
                                       style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
                         ], width=12, style={'margin-bottom': '10px'}),
