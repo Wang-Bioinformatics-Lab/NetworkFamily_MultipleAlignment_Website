@@ -6,11 +6,8 @@ from dash import Dash, html, dcc, callback, Output, Input, State
 
 import dash_bootstrap_components as dbc
 
-import plotly.express as px
 import plotly.graph_objects as go
 from dash.dependencies import Input, Output, State, ALL
-from plotly.subplots import make_subplots
-from typing import List, Tuple, Dict, Set
 import collections
 import json
 
