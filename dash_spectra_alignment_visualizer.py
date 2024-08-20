@@ -58,6 +58,7 @@ def _load_peaksets(file_name):
 dash_app.layout = html.Div([
     html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center'}),
 
+    # dbc card for data input/custom order/selection dropdown
     dbc.Card(
         [
             # header section
@@ -100,7 +101,7 @@ dash_app.layout = html.Div([
                             ),
                         ], width=12, style={'margin-bottom': '10px'}),
                     ]),
-                    style={'background-color': '#ffffff', 'padding': '20px'}  # white background
+                    style={'padding': '20px'}
                 ),
                 id="collapse-input",
                 is_open=True,
@@ -109,10 +110,51 @@ dash_app.layout = html.Div([
         style={'border': '1px solid #ccc', 'margin-bottom': '20px'}
     ),
 
-    dbc.Col(dbc.Button('Display Spectra', id='display-button', n_clicks=0, color="primary", className="ml-3"), width="auto"),
+    # dbc card for largest sets info
+    dbc.Card(
+        [
+            dbc.CardHeader(
+                dbc.Row([
+                    dbc.Col(html.H3("Largest Sets (Top 3)", className="card-title")),
+                    dbc.Col(dbc.Button("Show/Hide", id="toggle-largest-sets", color="secondary", size="sm"), width="auto")
+                ], align="center"),
+                style={'border-bottom': '1px solid #ccc'}  
+            ),
 
-    html.Div(id='file-info'),
-    html.Div(id='largest-sets'),
+            dbc.Collapse(
+                dbc.CardBody(
+                    html.Div(id='largest-sets') 
+                ),
+                id="collapse-largest-sets",
+                is_open=False,
+            ),
+        ],
+        style={'border': '1px solid #ccc', 'margin-bottom': '20px'}
+    ),
+    
+    # card for set info
+    dbc.Card(
+        [
+            dbc.CardHeader(
+                dbc.Row([
+                    dbc.Col(html.H3("Set Info", className="card-title")),
+                    dbc.Col(dbc.Button("Show/Hide", id="toggle-set-info", color="secondary", size="sm"), width="auto")
+                ], align="center"),
+                style={'border-bottom': '1px solid #ccc'}  
+            ),
+
+            dbc.Collapse(
+                dbc.CardBody(
+                    html.Div(id='set-info')
+                ),
+                id="collapse-set-info",
+                is_open=False,
+            ),
+        ],
+        style={'border': '1px solid #ccc', 'margin-bottom': '20px'}
+    ),
+
+    dbc.Col(dbc.Button('Display Spectra', id='display-button', n_clicks=0, color="primary", className="ml-3"), width="auto", style = {'margin-bottom': '20px'}),
     html.Div(id='graphs-container', style={'padding': '0', 'margin': '0'}),
     dcc.Store(id='clicked-peak-store', data={'scan': None, 'peak_idx': None}),
     dcc.Store(id='highlighted-sets', data=[]),
@@ -130,7 +172,7 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
     colors = ['grey'] * len(mz)
     annotations = []
 
-    # jighlight top 3 largest sets in red, green, and blue
+    # highlight top 3 largest sets in red, green, and blue
     for idx, highlight_set in enumerate(highlighted_sets):
         color = ['red', 'green', 'blue'][idx % 3]
         for scan_num, peak_idx in highlight_set:
@@ -231,6 +273,73 @@ def update_clicked_peak(clickData, current_data, file_name, custom_order):
             return {'scan': spec_id, 'peak_idx': peak_idx}
     return current_data
 
+
+@dash_app.callback(
+    Output('set-info', 'children'),
+    Input('clicked-peak-store', 'data'),
+    State('file-name-input', 'value'),
+    State('custom-order-input', 'value'),
+    prevent_initial_call=True
+)
+def display_set_info(clicked_peak, file_name, custom_order):
+    if clicked_peak['scan'] is None or clicked_peak['peak_idx'] is None:
+        return "Click on a peak to see its set information."
+
+    # load data again 
+    peak_sets, spec_dic, max_mz, max_size = _load_peaksets(file_name)
+
+    clicked_scan = clicked_peak['scan']
+    clicked_idx = clicked_peak['peak_idx']
+
+    # find the set containing the clicked peak
+    peak_set = None
+    for p_set in peak_sets:
+        if (clicked_scan, clicked_idx) in p_set:
+            peak_set = p_set
+            break
+
+    if peak_set is None:
+        return "No matching set found for the clicked peak."
+
+    # table column names
+    table_header = [
+        html.Thead(html.Tr([html.Th("Scan #"), html.Th("Peak Index"), html.Th("Precursor m/z"), html.Th("Peak m/z"), html.Th("Peak Intensity")]))
+    ]
+    
+    # get custom order of scan numbers
+    custom_order_list = [int(scan) for scan in custom_order.split(',')]
+
+    # make dictionary of peaks by scan number
+    peaks_dict = {peak[0]: peak for peak in peak_set}
+
+    # get peaks in the custom order
+    ordered_peaks = [peaks_dict[scan] for scan in custom_order_list if scan in peaks_dict]
+
+    # table rows
+    table_rows = []
+    for peak in ordered_peaks:
+        scan_num = peak[0]
+        peak_idx = peak[1]
+        precursor_mz = spec_dic[scan_num].precursor_mz
+        peak_mz = spec_dic[scan_num].mz[peak_idx]
+        peak_intensity = spec_dic[scan_num].intensity[peak_idx]
+
+        table_rows.append(
+            html.Tr([
+                html.Td(scan_num),
+                html.Td(peak_idx),
+                html.Td(f"{precursor_mz:.3f}"),
+                html.Td(f"{peak_mz:.3f}"),
+                html.Td(f"{peak_intensity:.3f}")
+            ])
+        )
+
+    # put header and rows into a table
+    table_body = [html.Tbody(table_rows)]
+    table = dbc.Table(table_header + table_body, bordered=True, hover=True, responsive=True, striped=True)
+
+    return table
+
 # callback for displaying spectra
 @dash_app.callback(
     [Output('largest-sets', 'children'), 
@@ -294,8 +403,8 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
                         'height': '100px',
                         'margin-right': '10px',
                         'white-space': 'nowrap',
-                        'text-align': 'right',  # adjust if needed
-                        'width': '230px'
+                        'text-align': 'right', 
+                        'width': '230px' # adjust if needed 
                     }
                 ),
                 dcc.Graph(
@@ -323,7 +432,7 @@ def update_file_name(search):
     # Parsing out the search field to grab the file name
     return "XXX"
 
-# Callback to toggle collapse
+# callback to toggle collapse for data input
 @dash_app.callback(
     Output("collapse-input", "is_open"),
     Input("toggle-button", "n_clicks"),
@@ -334,6 +443,27 @@ def toggle_collapse(n, is_open):
         return not is_open
     return is_open
 
+# call back for collapsing largest sets 
+@dash_app.callback(
+    Output("collapse-largest-sets", "is_open"),
+    Input("toggle-largest-sets", "n_clicks"),
+    State("collapse-largest-sets", "is_open")
+)
+def toggle_largest_sets(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
+
+# call back for collapsing set info
+@dash_app.callback(
+    Output("collapse-set-info", "is_open"),
+    Input("toggle-set-info", "n_clicks"),
+    State("collapse-set-info", "is_open")
+)
+def toggle_largest_sets(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
 
 if __name__ == '__main__':
     app.run(debug=True)
