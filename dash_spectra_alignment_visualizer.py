@@ -267,7 +267,6 @@ def update_clicked_peak(clickData, current_data, file_name, custom_order):
     for i, data in enumerate(clickData):
         if data and 'points' in data:
             point = data['points'][0]
-            # spec_id = list(spec_dic.keys())[i]
             spec_id = list(ordered_spec_dic.keys())[i]
             peak_idx = point['pointIndex']
             return {'scan': spec_id, 'peak_idx': peak_idx}
