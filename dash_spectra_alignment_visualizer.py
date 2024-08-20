@@ -53,24 +53,67 @@ def _load_peaksets(file_name):
     max_size = max(len(s) for s in peak_sets)
 
     return peak_sets, spec_dic, max_mz, max_size
+    
 
 dash_app.layout = html.Div([
     html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center'}),
-    
-    dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', style={'width': '50%'}),
-    html.Button('Display Spectra', id='display-button', n_clicks=0),
 
-    dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', style={'width': '50%'}),
-    dcc.Dropdown(
-        id='sort-order-dropdown',
-        options=[
-            {'label': 'Default (Topological Sort) Order', 'value': 'original'},
-            {'label': 'Ascending by Precursor m/z', 'value': 'asc'},
-            {'label': 'Descending by Precursor m/z', 'value': 'desc'},
-            {'label': 'Custom Order', 'value': 'custom'}
-        ],
-        placeholder='Select sorting order'
+    dbc.Card(
+        dbc.CardBody([
+            dbc.Row([
+                dbc.Col(html.H3("Data Input", className="card-title")),
+                dbc.Col(dbc.Button("Show/Hide", id="toggle-button", color="secondary", size="sm"), width="auto")
+            ], align="center"),
+
+            dbc.Collapse(
+                dbc.Row([
+                    dbc.Col([
+                        html.Label("File Name", htmlFor='file-name-input', style={'fontSize': '24px'}),
+                        dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', 
+                                  style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
+                    ], width=12, style={'margin-bottom': '10px'}),
+
+                    dbc.Col([
+                        html.Label("Custom Order (Optional)", htmlFor='custom-order-input',  style={'fontSize': '24px'}),
+                        dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', 
+                                  style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
+                    ], width=12, style={'margin-bottom': '10px'}),
+                    
+                    dbc.Col([
+                        html.Label("Select Sorting Order", htmlFor='sort-order-dropdown', style={'fontSize': '24px'}),
+                        dcc.Dropdown(
+                            id='sort-order-dropdown',
+                            options=[
+                                {'label': 'Default (Topological Sort) Order', 'value': 'original'},
+                                {'label': 'Ascending by Precursor m/z', 'value': 'asc'},
+                                {'label': 'Descending by Precursor m/z', 'value': 'desc'},
+                                {'label': 'Custom Order', 'value': 'custom'}
+                            ],
+                            placeholder='Select sorting order', 
+                            style={'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}
+                        ),
+                    ], width=12, style={'margin-bottom': '10px'}),
+                ]),
+                id="collapse-input",
+                is_open=True,
+            ),
+        ]),
+        style={'background-color': '#f8f9fa', 'border': '1px solid #ccc', 'padding': '10px', 'margin-bottom': '20px'}
     ),
+
+    dbc.Col(dbc.Button('Display Spectra', id='display-button', n_clicks=0, color="primary", className="ml-3"), width="auto"),
+
+    # dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', style={'width': '50%'}),
+    # dcc.Dropdown(
+    #     id='sort-order-dropdown',
+    #     options=[
+    #         {'label': 'Default (Topological Sort) Order', 'value': 'original'},
+    #         {'label': 'Ascending by Precursor m/z', 'value': 'asc'},
+    #         {'label': 'Descending by Precursor m/z', 'value': 'desc'},
+    #         {'label': 'Custom Order', 'value': 'custom'}
+    #     ],
+    #     placeholder='Select sorting order'
+    # ),
     html.Div(id='file-info'),
     html.Div(id='largest-sets'),
     html.Div(id='graphs-container', style={'padding': '0', 'margin': '0'}),
@@ -283,6 +326,16 @@ def update_file_name(search):
     # Parsing out the search field to grab the file name
     return "XXX"
 
+# Callback to toggle collapse
+@dash_app.callback(
+    Output("collapse-input", "is_open"),
+    Input("toggle-button", "n_clicks"),
+    State("collapse-input", "is_open"),
+)
+def toggle_collapse(n, is_open):
+    if n:
+        return not is_open
+    return is_open
 
 
 if __name__ == '__main__':
