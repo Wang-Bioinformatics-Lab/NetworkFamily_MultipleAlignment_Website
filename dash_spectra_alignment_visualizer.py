@@ -200,13 +200,19 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
                 )
             )
 
-        # highlight matched peaks
+        # highlight matched peaks, red is common (marked as 2), blue is shifted (marked as 1)
         for match_set in sets:
             if (clicked_scan, clicked_idx) in match_set:
                 temp_dic = {}
                 for peak in match_set:
+                    # if it's an exact match
                     if spec_dic[peak[0]].mz[peak[1]] in temp_dic:
-                        temp_dic[spec_dic[peak[0]].mz[peak[1]]] += 1
+                        temp_dic[spec_dic[peak[0]].mz[peak[1]]] = 2
+                    # if the mz is within the tolerance of 0.1
+                    elif (spec_dic[peak[0]].mz[peak[1]] + 0.1) in temp_dic:
+                        temp_dic[spec_dic[peak[0]].mz[peak[1]]] = 2
+                    elif (spec_dic[peak[0]].mz[peak[1]] - 0.1) in temp_dic:
+                        temp_dic[spec_dic[peak[0]].mz[peak[1]]] = 2
                     else:
                         temp_dic[spec_dic[peak[0]].mz[peak[1]]] = 1
                 for peak in match_set:
