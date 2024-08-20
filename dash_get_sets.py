@@ -33,6 +33,7 @@ dash_app = dash.Dash(
 )
 
 dash_app.layout = html.Div([
+    dcc.Location(id='url', refresh=False),
     dcc.Input(id='task-id-input', type='text', placeholder='Enter task ID', value="c198b31cb3e241ccbf1d7fc2dd9af0c7"),
     dcc.Input(id='component-input', type='text', placeholder='Enter component number', value="1"),
     html.Button('Process and Save JSON', id='process-button'),
@@ -74,6 +75,25 @@ def process_and_save_json(n_clicks, task_id, component_number):
     output_result.append(linkout)
 
     return output_result
+    
+
+# Setting file-name-input value from the url search parameters
+@dash_app.callback(
+    [
+        Output('task-id-input', 'value'),
+        Output('component-input', 'value')
+     ],
+    Input('url', 'search')
+)
+def update_file_name(search):
+
+    try:
+        # Parsing out the search field to grab the file name
+        import urllib.parse
+        params_dict = urllib.parse.parse_qs(search[1:])
+        return [params_dict['task'][0], params_dict['component'][0]]
+    except:
+        return [dash.no_update, dash.no_update]
     
 if __name__ == '__main__':
     app.run(debug=True)
