@@ -2,7 +2,7 @@
 import dash
 from dash import dcc
 from dash import html
-from dash import Dash, html, dcc, callback, Output, Input, State
+from dash import Dash, callback, Output, Input, State, dash_table
 
 import dash_bootstrap_components as dbc
 
@@ -82,13 +82,13 @@ dash_app.layout = html.Div([
                         ], width=12, style={'margin-bottom': '10px'}),
 
                         dbc.Col([
-                            html.Label("Custom Order (Optional)", htmlFor='custom-order-input',  style={'fontSize': '24px'}),
+                            html.Label("Custom Order (Optional)", htmlFor='custom-order-input'),
                             dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', 
                                       style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
                         ], width=12, style={'margin-bottom': '10px'}),
 
                         dbc.Col([
-                            html.Label("Select Sorting Order (Optional)", htmlFor='sort-order-dropdown', style={'fontSize': '24px'}),
+                            html.Label("Select Sorting Order (Optional)", htmlFor='sort-order-dropdown'),
                             dcc.Dropdown(
                                 id='sort-order-dropdown',
                                 options=[
@@ -311,11 +311,6 @@ def display_set_info(clicked_peak, file_name, custom_order):
 
     if peak_set is None:
         return "No matching set found for the clicked peak."
-
-    # table column names
-    table_header = [
-        html.Thead(html.Tr([html.Th("Scan #"), html.Th("Peak Index"), html.Th("Precursor m/z"), html.Th("Peak m/z"), html.Th("Peak Intensity")]))
-    ]
     
     # get custom order of scan numbers
     custom_order_list = [int(scan) for scan in custom_order.split(',')]
@@ -326,28 +321,52 @@ def display_set_info(clicked_peak, file_name, custom_order):
     # get peaks in the custom order
     ordered_peaks = [peaks_dict[scan] for scan in custom_order_list if scan in peaks_dict]
 
-    # table rows
-    table_rows = []
-    for peak in ordered_peaks:
-        scan_num = peak[0]
-        peak_idx = peak[1]
-        precursor_mz = spec_dic[scan_num].precursor_mz
-        peak_mz = spec_dic[scan_num].mz[peak_idx]
-        peak_intensity = spec_dic[scan_num].intensity[peak_idx]
+    # # table rows
+    # table_rows = []
+    # for peak in ordered_peaks:
+    #     scan_num = peak[0]
+    #     peak_idx = peak[1]
+    #     precursor_mz = spec_dic[scan_num].precursor_mz
+    #     peak_mz = spec_dic[scan_num].mz[peak_idx]
+    #     peak_intensity = spec_dic[scan_num].intensity[peak_idx]
 
-        table_rows.append(
-            html.Tr([
-                html.Td(scan_num),
-                html.Td(peak_idx),
-                html.Td(f"{precursor_mz:.3f}"),
-                html.Td(f"{peak_mz:.3f}"),
-                html.Td(f"{peak_intensity:.3f}")
-            ])
-        )
+    #     table_rows.append(
+    #         html.Tr([
+    #             html.Td(scan_num),
+    #             html.Td(peak_idx),
+    #             html.Td(f"{precursor_mz:.3f}"),
+    #             html.Td(f"{peak_mz:.3f}"),
+    #             html.Td(f"{peak_intensity:.3f}")
+    #         ])
+    #     )
 
-    # put header and rows into a table
-    table_body = [html.Tbody(table_rows)]
-    table = dbc.Table(table_header + table_body, bordered=True, hover=True, responsive=True, striped=True)
+    data = [
+        {
+            'Scan #': peak[0],
+            'Peak Index': peak[1],
+            'Precursor m/z': f"{spec_dic[peak[0]].precursor_mz:.3f}",
+            'Peak m/z': f"{spec_dic[peak[0]].mz[peak[1]]:.3f}",
+            'Peak Intensity': f"{spec_dic[peak[0]].intensity[peak[1]]:.3f}"
+        }
+        for peak in ordered_peaks
+    ]
+
+    table = dash_table.DataTable(
+        data = data,
+        columns = [
+            {'name': 'Scan #', 'id': 'Scan #', 'type': 'numeric'},
+            {'name': 'Peak Index', 'id': 'Peak Index', 'type': 'numeric'},
+            {'name': 'Precursor m/z', 'id': 'Precursor m/z', 'type': 'numeric'},
+            {'name': 'Peak m/z', 'id': 'Peak m/z', 'type': 'numeric'},
+            {'name': 'Peak Intensity', 'id': 'Peak Intensity', 'type': 'numeric'},
+        ],
+        sort_action='native',
+        style_table={'overflowX': 'auto'},
+        style_header={'fontWeight': 'bold'},
+        style_cell={'textAlign': 'left', 'padding': '5px'},
+        style_as_list_view=True,
+        page_size=10 # 10 rows per page
+    )
 
     return table
 
