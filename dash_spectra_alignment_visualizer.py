@@ -65,7 +65,7 @@ dash_app.layout = html.Div([
             # header section
             dbc.CardHeader(
                 dbc.Row([
-                    dbc.Col(html.H3("Data Input", className="card-title")),
+                    dbc.Col(html.H3("Data Input", className="card-title", style={'fontSize': '20px'})),
                     dbc.Col(dbc.Button("Show/Hide", id="toggle-button", color="secondary", size="sm"), width="auto")
                 ], align="center"),
                 style={'border-bottom': '1px solid #ccc'} 
@@ -78,13 +78,13 @@ dash_app.layout = html.Div([
                         dbc.Col([
                             html.Label("File Name", htmlFor='file-name-input'),
                             dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', 
-                                      style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
+                                      style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px'}),
                         ], width=12, style={'margin-bottom': '10px'}),
 
                         dbc.Col([
                             html.Label("Custom Order (Optional)", htmlFor='custom-order-input'),
                             dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', 
-                                      style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
+                                      style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px'}),
                         ], width=12, style={'margin-bottom': '10px'}),
 
                         dbc.Col([
@@ -98,11 +98,10 @@ dash_app.layout = html.Div([
                                     {'label': 'Custom Order', 'value': 'custom'}
                                 ],
                                 placeholder='Select sorting order', 
-                                style={'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}
+                                style={'fontSize': '14px'}
                             ),
                         ], width=12, style={'margin-bottom': '10px'}),
-                    ]),
-                    style={'padding': '20px'}
+                    ])
                 ),
                 id="collapse-input",
                 is_open=True,
@@ -116,7 +115,7 @@ dash_app.layout = html.Div([
         [
             dbc.CardHeader(
                 dbc.Row([
-                    dbc.Col(html.H3("Largest Sets (Top 3)", className="card-title")),
+                    dbc.Col(html.H3("Largest Sets (Top 3)", className="card-title", style={'fontSize': '20px'})),
                     dbc.Col(dbc.Button("Show/Hide", id="toggle-largest-sets", color="secondary", size="sm"), width="auto")
                 ], align="center"),
                 style={'border-bottom': '1px solid #ccc'}  
@@ -138,7 +137,7 @@ dash_app.layout = html.Div([
         [
             dbc.CardHeader(
                 dbc.Row([
-                    dbc.Col(html.H3("Set Info", className="card-title")),
+                    dbc.Col(html.H3("Set Info", className="card-title", style={'fontSize': '18px'})),
                     dbc.Col(dbc.Button("Show/Hide", id="toggle-set-info", color="secondary", size="sm"), width="auto")
                 ], align="center"),
                 style={'border-bottom': '1px solid #ccc'}  
