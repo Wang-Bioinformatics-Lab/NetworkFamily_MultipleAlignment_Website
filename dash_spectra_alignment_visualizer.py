@@ -57,7 +57,7 @@ def _load_peaksets(file_name):
 
 dash_app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
-    html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center'}),
+    html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center',  'padding': '10px'}),
 
     # dbc card for data input/custom order/selection dropdown
     dbc.Card(
@@ -76,19 +76,22 @@ dash_app.layout = html.Div([
                 dbc.CardBody(
                     dbc.Row([
                         dbc.Col([
-                            html.Label("File Name", htmlFor='file-name-input'),
+                            # html.Label("File Name", htmlFor='file-name-input'),
+                            dbc.Label("File Name", html_for='file-name-input'),
                             dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', 
-                                      style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px'}),
+                                      style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px', 'border': '1px solid #ccc'}),
                         ], width=12, style={'margin-bottom': '10px'}),
 
                         dbc.Col([
-                            html.Label("Custom Order (Optional)", htmlFor='custom-order-input'),
+                            # html.Label("Custom Order (Optional)", htmlFor='custom-order-input'),
+                            dbc.Label("Custom Order (Optional)", html_for='custom-order-input'),
                             dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', 
-                                      style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px'}),
+                                      style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px', 'border': '1px solid #ccc'}),
                         ], width=12, style={'margin-bottom': '10px'}),
 
                         dbc.Col([
-                            html.Label("Select Sorting Order (Optional)", htmlFor='sort-order-dropdown'),
+                            # html.Label("Select Sorting Order (Optional)", htmlFor='sort-order-dropdown'),
+                            dbc.Label("Select Sorting Order (Optional)", html_for='sort-order-dropdown'),
                             dcc.Dropdown(
                                 id='sort-order-dropdown',
                                 options=[
@@ -107,7 +110,7 @@ dash_app.layout = html.Div([
                 is_open=True,
             ),
         ],
-        style={'border': '1px solid #ccc', 'margin-bottom': '20px'}
+        style={'margin-bottom': '20px'}
     ),
 
     # dbc card for largest sets info
@@ -129,7 +132,7 @@ dash_app.layout = html.Div([
                 is_open=False,
             ),
         ],
-        style={'border': '1px solid #ccc', 'margin-bottom': '20px'}
+        style={'margin-bottom': '20px'}
     ),
     
     # card for set info
@@ -137,7 +140,7 @@ dash_app.layout = html.Div([
         [
             dbc.CardHeader(
                 dbc.Row([
-                    dbc.Col(html.H3("Set Info", className="card-title", style={'fontSize': '18px'})),
+                    dbc.Col(html.H3("Set Info", className="card-title", style={'fontSize': '20px'})),
                     dbc.Col(dbc.Button("Show/Hide", id="toggle-set-info", color="secondary", size="sm"), width="auto")
                 ], align="center"),
                 style={'border-bottom': '1px solid #ccc'}  
@@ -151,7 +154,7 @@ dash_app.layout = html.Div([
                 is_open=False,
             ),
         ],
-        style={'border': '1px solid #ccc', 'margin-bottom': '20px'}
+        style={'margin-bottom': '20px'}
     ),
 
     dbc.Col(dbc.Button('Display Spectra', id='display-button', n_clicks=0, color="primary", className="ml-3"), width="auto", style = {'margin-bottom': '20px'}),
