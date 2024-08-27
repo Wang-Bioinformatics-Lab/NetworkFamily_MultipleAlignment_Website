@@ -2,7 +2,7 @@
 import dash
 from dash import dcc
 from dash import html
-from dash import Dash, html, dcc, callback, Output, Input, State
+from dash import Dash, callback, Output, Input, State, dash_table
 
 import dash_bootstrap_components as dbc
 
@@ -13,6 +13,7 @@ import json
 import os
 
 from config import SETS_TEMP_PATH
+import numpy as np
 
 SpectrumTuple = collections.namedtuple('SpectrumTuple', ['scan', 'precursor_mz', 'precursor_charge', 'mz', 'intensity'])
 PeakTuple = collections.namedtuple('PeakTuple', ['scan_num', 'peak_idx'])
@@ -74,11 +75,84 @@ def _load_peaksets(file_name):
     max_size = max(len(s) for s in peak_sets)
 
     return peak_sets, spec_dic, max_mz, max_size
-    
+
+
+def calculate_percent_top_10(peak_sets, spec_dic):
+    top_10_dic = {}
+
+    # change spectrum tuple to dictionary
+    for key, s in spec_dic.items():
+        # get top 10 peaks based on intensity
+        top_10_indices = np.argsort(s.intensity)[-10:][::-1]
+        top_10_mz = [s.mz[i] for i in top_10_indices]
+        top_10_intensity = [s.intensity[i] for i in top_10_indices]
+
+        # use a set of tuples (mz, intensity)
+        top_10_peaks = set(zip(top_10_mz, top_10_intensity))
+
+        top_10_dic[int(s.scan)] = {
+            "scan": int(s.scan),
+            "top_10_peaks": top_10_peaks
+        }
+
+    percent_top_10_info = []
+
+    # iterate over each set
+    for set_index, match_list in enumerate(peak_sets):
+        top_10_count = 0  # count for peaks that are in the top 10
+        total_peaks = len(match_list) 
+        
+        # iterate over each peak in the current set
+        for peak_tuple in match_list:
+            spectrum_id = peak_tuple.scan_num  # get scan num
+            peak_index = peak_tuple.peak_idx  # get peak index 
+            
+            # get top 10 peaks for this spectrum
+            top_10_peaks = top_10_dic[spectrum_id]['top_10_peaks']
+            
+            # get mz and intensity of the current peak
+            peak_mz = spec_dic[int(spectrum_id)].mz[int(peak_index)]
+            peak_intensity = spec_dic[spectrum_id].intensity[peak_index]
+
+            # check if the peak is in the top 10
+            if (peak_mz, peak_intensity) in top_10_peaks:
+                top_10_count += 1
+
+        # calculate the percentage of peaks in the set that are in the top 10
+        if total_peaks > 0:
+            percent_top_10 = (top_10_count / total_peaks) * 100
+        else:
+            percent_top_10 = 0
+        
+    # add the result to the list
+        percent_top_10_info.append({
+            'set_number': set_index + 1,
+            'set_size': total_peaks,
+            'percent': percent_top_10
+        })
+
+    # create a table
+    table = dash_table.DataTable(
+        data=percent_top_10_info,
+        columns=[
+            {'name': 'Set Number', 'id': 'set_number', 'type': 'numeric'},
+            {'name': 'Set Size', 'id': 'set_size', 'type': 'numeric'},
+            {'name': 'Percent', 'id': 'percent', 'type': 'numeric', 'format': {'specifier': '.2f'}},
+        ],
+        sort_action='native',  # allow for sorting
+        style_table={'overflowX': 'auto'},
+        style_header={'fontWeight': 'bold'},
+        style_cell={'textAlign': 'left', 'padding': '5px'},
+        style_as_list_view=True,
+        page_size=10  # 10 rows per page
+    )
+
+    return table
+
 
 dash_app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
-    html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center'}),
+    html.H1('Molecular Networking Peak Alignment', style={'textAlign': 'center',  'padding': '10px'}),
 
     # dbc card for data input/custom order/selection dropdown
     dbc.Card(
@@ -86,7 +160,7 @@ dash_app.layout = html.Div([
             # header section
             dbc.CardHeader(
                 dbc.Row([
-                    dbc.Col(html.H3("Data Input", className="card-title")),
+                    dbc.Col(html.H3("Data Input", className="card-title", style={'fontSize': '20px'})),
                     dbc.Col(dbc.Button("Show/Hide", id="toggle-button", color="secondary", size="sm"), width="auto")
                 ], align="center"),
                 style={'border-bottom': '1px solid #ccc'} 
@@ -97,19 +171,22 @@ dash_app.layout = html.Div([
                 dbc.CardBody(
                     dbc.Row([
                         dbc.Col([
-                            html.Label("File Name", htmlFor='file-name-input'),
+                            # html.Label("File Name", htmlFor='file-name-input'),
+                            dbc.Label("File Name", html_for='file-name-input'),
                             dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', 
-                                      style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
+                                      style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px', 'border': '1px solid #ccc'}),
                         ], width=12, style={'margin-bottom': '10px'}),
 
                         dbc.Col([
-                            html.Label("Custom Order (Optional)", htmlFor='custom-order-input',  style={'fontSize': '24px'}),
+                            # html.Label("Custom Order (Optional)", htmlFor='custom-order-input'),
+                            dbc.Label("Custom Order of Scan Numbers (Optional)", html_for='custom-order-input'),
                             dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', 
-                                      style={'width': '100%', 'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}),
+                                      style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px', 'border': '1px solid #ccc'}),
                         ], width=12, style={'margin-bottom': '10px'}),
 
                         dbc.Col([
-                            html.Label("Select Sorting Order (Optional)", htmlFor='sort-order-dropdown', style={'fontSize': '24px'}),
+                            # html.Label("Select Sorting Order (Optional)", htmlFor='sort-order-dropdown'),
+                            dbc.Label("Select Sorting Order (Optional)", html_for='sort-order-dropdown'),
                             dcc.Dropdown(
                                 id='sort-order-dropdown',
                                 options=[
@@ -119,39 +196,42 @@ dash_app.layout = html.Div([
                                     {'label': 'Custom Order', 'value': 'custom'}
                                 ],
                                 placeholder='Select sorting order', 
-                                style={'fontSize': '20px', 'padding': '10px', 'borderRadius': '5px'}
+                                style={'fontSize': '14px'}
                             ),
                         ], width=12, style={'margin-bottom': '10px'}),
-                    ]),
-                    style={'padding': '20px'}
+                    ])
                 ),
                 id="collapse-input",
                 is_open=True,
             ),
         ],
-        style={'border': '1px solid #ccc', 'margin-bottom': '20px'}
+        style={'margin-bottom': '20px'}
     ),
 
-    # dbc card for largest sets info
+    # card for set top 10 percents
     dbc.Card(
         [
             dbc.CardHeader(
                 dbc.Row([
-                    dbc.Col(html.H3("Largest Sets (Top 3)", className="card-title")),
-                    dbc.Col(dbc.Button("Show/Hide", id="toggle-largest-sets", color="secondary", size="sm"), width="auto")
+                    dbc.Col(html.H3("Set Info with Top 10 Peak Intensity Percentages", className="card-title", style={'fontSize': '20px'})),
+                    dbc.Col(dbc.Button("Show/Hide", id="toggle-set-percents", color="secondary", size="sm"), width="auto")
                 ], align="center"),
                 style={'border-bottom': '1px solid #ccc'}  
             ),
 
             dbc.Collapse(
                 dbc.CardBody(
-                    html.Div(id='largest-sets') 
+                    dbc.Row([
+                        html.Div(id='set_info', style={'margin-bottom': '10px'}), 
+                        html.Div(id='percent-top-10-output')
+                    ])
+                    
                 ),
-                id="collapse-largest-sets",
+                id="collapse-set-percents",
                 is_open=False,
             ),
         ],
-        style={'border': '1px solid #ccc', 'margin-bottom': '20px'}
+        style={'margin-bottom': '20px'}
     ),
     
     # card for set info
@@ -159,7 +239,7 @@ dash_app.layout = html.Div([
         [
             dbc.CardHeader(
                 dbc.Row([
-                    dbc.Col(html.H3("Set Info", className="card-title")),
+                    dbc.Col(html.H3("Set Info", className="card-title", style={'fontSize': '20px'})),
                     dbc.Col(dbc.Button("Show/Hide", id="toggle-set-info", color="secondary", size="sm"), width="auto")
                 ], align="center"),
                 style={'border-bottom': '1px solid #ccc'}  
@@ -173,7 +253,7 @@ dash_app.layout = html.Div([
                 is_open=False,
             ),
         ],
-        style={'border': '1px solid #ccc', 'margin-bottom': '20px'}
+        style={'margin-bottom': '20px'}
     ),
 
     dbc.Col(dbc.Button('Display Spectra', id='display-button', n_clicks=0, color="primary", className="ml-3"), width="auto", style = {'margin-bottom': '20px'}),
@@ -301,8 +381,7 @@ def update_clicked_peak(clickData, current_data, file_name, custom_order):
             spec_id = list(ordered_spec_dic.keys())[i]
             peak_idx = point['pointIndex']
             return {'scan': spec_id, 'peak_idx': peak_idx}
-    return current_data
-
+    return current_data 
 
 @dash_app.callback(
     Output('set-info', 'children'),
@@ -325,18 +404,14 @@ def display_set_info(clicked_peak, file_name, custom_order):
 
     # find the set containing the clicked peak
     peak_set = None
-    for p_set in peak_sets:
+    for i, p_set in enumerate(peak_sets):
         if (clicked_scan, clicked_idx) in p_set:
             peak_set = p_set
+            set_num = i + 1
             break
 
     if peak_set is None:
         return "No matching set found for the clicked peak."
-
-    # table column names
-    table_header = [
-        html.Thead(html.Tr([html.Th("Scan #"), html.Th("Peak Index"), html.Th("Precursor m/z"), html.Th("Peak m/z"), html.Th("Peak Intensity")]))
-    ]
     
     # get custom order of scan numbers
     custom_order_list = [int(scan) for scan in custom_order.split(',')]
@@ -347,34 +422,42 @@ def display_set_info(clicked_peak, file_name, custom_order):
     # get peaks in the custom order
     ordered_peaks = [peaks_dict[scan] for scan in custom_order_list if scan in peaks_dict]
 
-    # table rows
-    table_rows = []
-    for peak in ordered_peaks:
-        scan_num = peak[0]
-        peak_idx = peak[1]
-        precursor_mz = spec_dic[scan_num].precursor_mz
-        peak_mz = spec_dic[scan_num].mz[peak_idx]
-        peak_intensity = spec_dic[scan_num].intensity[peak_idx]
+    data = [
+        {
+            'Scan #': peak[0],
+            'Peak Index': peak[1],
+            'Precursor m/z': f"{spec_dic[peak[0]].precursor_mz:.3f}",
+            'Peak m/z': f"{spec_dic[peak[0]].mz[peak[1]]:.3f}",
+            'Peak Intensity': f"{spec_dic[peak[0]].intensity[peak[1]]:.3f}", 
+            'Set Number': set_num
+        }
+        for peak in ordered_peaks
+    ]
 
-        table_rows.append(
-            html.Tr([
-                html.Td(scan_num),
-                html.Td(peak_idx),
-                html.Td(f"{precursor_mz:.3f}"),
-                html.Td(f"{peak_mz:.3f}"),
-                html.Td(f"{peak_intensity:.3f}")
-            ])
-        )
-
-    # put header and rows into a table
-    table_body = [html.Tbody(table_rows)]
-    table = dbc.Table(table_header + table_body, bordered=True, hover=True, responsive=True, striped=True)
+    table = dash_table.DataTable(
+        data = data,
+        columns = [
+            {'name': 'Scan #', 'id': 'Scan #', 'type': 'numeric'},
+            {'name': 'Peak Index', 'id': 'Peak Index', 'type': 'numeric'},
+            {'name': 'Precursor m/z', 'id': 'Precursor m/z', 'type': 'numeric'},
+            {'name': 'Peak m/z', 'id': 'Peak m/z', 'type': 'numeric'},
+            {'name': 'Peak Intensity', 'id': 'Peak Intensity', 'type': 'numeric'},
+            {'name': 'Set Number', 'id': 'Set Number', 'type': 'numeric'},
+        ],
+        sort_action='native',
+        style_table={'overflowX': 'auto'},
+        style_header={'fontWeight': 'bold'},
+        style_cell={'textAlign': 'left', 'padding': '5px'},
+        style_as_list_view=True,
+        page_size=10 # 10 rows per page
+    )
 
     return table
 
 # callback for displaying spectra
 @dash_app.callback(
-    [Output('largest-sets', 'children'), 
+    [Output('percent-top-10-output', 'children'),
+     Output('set_info', 'children'), 
      Output('graphs-container', 'children'), 
      Output('highlighted-sets', 'data'),
      Output('custom-order-input', 'value')],
@@ -393,12 +476,6 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
 
     # get largest sets
     largest_sets = sorted(peak_sets, key=len, reverse=True)[:3]
-
-    # get largest sets information
-    largest_sets_info = []
-    for i, s in enumerate(largest_sets, 1):
-        peaks_info = ', '.join([f'Scan: {p[0]} Peak Index: {p[1]}' for p in s])
-        largest_sets_info.append(html.Div(f'Largest Set {i}, size {len(s)}: {peaks_info}'))
 
     ordered_spec_dic = spec_dic
 
@@ -453,7 +530,13 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
     current_order = list(ordered_spec_dic.keys())
     current_order_str = ', '.join(map(str, current_order))
 
-    return largest_sets_info, graphs, largest_sets, current_order_str
+    # calculate the percent top 10 for the sets
+    percent_top_10_info = calculate_percent_top_10(peak_sets, spec_dic)
+
+    sets_info = f'The table below displays the information for {len(peak_sets)} sets, as well as the percentage of peaks within each set that are in the top 10 intensities per spectrum'
+
+    return percent_top_10_info, sets_info, graphs, largest_sets, current_order_str
+    # return percent_top_10_info, graphs, largest_sets, current_order_str
 
 # Setting file-name-input value from the url search parameters
 @dash_app.callback(
@@ -497,6 +580,17 @@ def toggle_largest_sets(n_clicks, is_open):
     Output("collapse-set-info", "is_open"),
     Input("toggle-set-info", "n_clicks"),
     State("collapse-set-info", "is_open")
+)
+def toggle_largest_sets(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
+
+# call back for collapsing set percents
+@dash_app.callback(
+    Output("collapse-set-percents", "is_open"),
+    Input("toggle-set-percents", "n_clicks"),
+    State("collapse-set-percents", "is_open")
 )
 def toggle_largest_sets(n_clicks, is_open):
     if n_clicks:

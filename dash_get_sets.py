@@ -1,6 +1,3 @@
-import requests
-import pandas as pd
-import io
 import os
 import collections
 from typing import List, Tuple, Dict, Set
@@ -32,15 +29,87 @@ dash_app = dash.Dash(
     external_stylesheets=[dbc.themes.BOOTSTRAP],
 )
 
-dash_app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    dcc.Input(id='task-id-input', type='text', placeholder='Enter task ID', value="c198b31cb3e241ccbf1d7fc2dd9af0c7"),
-    dcc.Input(id='component-input', type='text', placeholder='Enter component number', value="1"),
-    html.Button('Process and Save JSON', id='process-button'),
-    html.Div(id='output-path')
-])
+# dash_app.layout = html.Div([
+#     dcc.Location(id='url', refresh=False),
+#     dcc.Input(id='task-id-input', type='text', placeholder='Enter task ID', value="c198b31cb3e241ccbf1d7fc2dd9af0c7"),
+#     dcc.Input(id='component-input', type='text', placeholder='Enter component number', value="1"),
+#     html.Button('Process and Save JSON', id='process-button'),
+#     html.Div(id='output-path')
+# ])
 
 
+dash_app.layout = dbc.Container(
+    [
+        dbc.Row(
+            dbc.Col(
+                html.H1("Molecular Networking Peak Alignment", style={'textAlign': 'center',  'padding': '10px'}),
+                width=12
+            )
+        ),
+        dbc.Card(
+            [
+                dbc.CardHeader(
+                    dbc.Row(html.H3("Data Selection", className="card-title", style={'fontSize': '18px'}))
+                ),
+                dbc.CardBody(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        dbc.Label("Task ID", html_for="task-id-input"),
+                                        dbc.Input(
+                                            id='task-id-input',
+                                            type='text',
+                                            placeholder='Enter task ID',
+                                            value="c198b31cb3e241ccbf1d7fc2dd9af0c7",
+                                            # style={'width': '100%'},
+                                            size='sm'
+                                        ),
+                                    ],
+                                    width=6
+                                ),
+                                dbc.Col(
+                                    [
+                                        dbc.Label("Component Number", html_for="component-input"),
+                                        dbc.Input(
+                                            id='component-input',
+                                            type='text',
+                                            placeholder='Enter component number',
+                                            value="1",
+                                            # className="mb-4",
+                                            # style={'fontSize': '16px'},
+                                            size="sm" 
+                                        ),
+                                    ],
+                                    width=4,
+                                ),
+                                dbc.Col(
+                                    dbc.Button(
+                                        'Process and Save JSON',
+                                        id='process-button',
+                                        color='primary',
+                                        size="sm"
+                                    ),
+                                    width=2,
+                                    className="d-flex align-items-end"
+                                ),
+                            ],
+                            style={'margin-bottom': '10px'}
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                html.Div(id='output-path'),
+                                width=12
+                            )
+                        )
+                    ]
+                )
+            ]
+        ),
+    ],
+    fluid=True
+)
 
 @dash_app.callback(
     Output('output-path', 'children'),
@@ -69,7 +138,14 @@ def process_and_save_json(n_clicks, task_id, component_number):
 
 
     # Create a linkout to the other page with the json file in the url
-    linkout = dash.dcc.Link('View Alignment', href=f'/spectraalignment?filename={task_id}_{component_number}.json', target='_blank')
+    # linkout = dash.dcc.Link('View Alignment', href=f'/spectraalignment?filename={task_id}_{component_number}.json', target='_blank')
+
+    # create a link button
+    linkout = html.A(
+        dbc.Button('View Alignment', color='primary', size = 'sm'),
+        href=f'/spectraalignment?filename={task_id}_{component_number}.json',
+        target='_blank'
+    )
 
     output_result.append(html.P(f"Saved to {SAVE_PATH}"))
     output_result.append(linkout)
