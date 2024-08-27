@@ -58,14 +58,15 @@ def _load_peaksets(file_name):
 
 def calculate_percent_top_10(peak_sets, spec_dic):
     top_10_dic = {}
-    # Convert spectrum tuple to dictionary
+
+    # change spectrum tuple to dictionary
     for key, s in spec_dic.items():
-        # Get the top 10 peaks based on intensity
+        # get top 10 peaks based on intensity
         top_10_indices = np.argsort(s.intensity)[-10:][::-1]
         top_10_mz = [s.mz[i] for i in top_10_indices]
         top_10_intensity = [s.intensity[i] for i in top_10_indices]
 
-        # Use a set of tuples (mz, intensity) for faster checking
+        # use a set of tuples (mz, intensity)
         top_10_peaks = set(zip(top_10_mz, top_10_intensity))
 
         top_10_dic[int(s.scan)] = {
@@ -73,42 +74,59 @@ def calculate_percent_top_10(peak_sets, spec_dic):
             "top_10_peaks": top_10_peaks
         }
 
-    percent_top_10_info = {}
+    percent_top_10_info = []
 
-    # Iterate over each set
+    # iterate over each set
     for set_index, match_list in enumerate(peak_sets):
-        top_10_count = 0  # Counter for peaks that are in the top 10
-        total_peaks = len(match_list)  # Total peaks in this set
+        top_10_count = 0  # count for peaks that are in the top 10
+        total_peaks = len(match_list) 
         
-        # Iterate over each peak in the current set
+        # iterate over each peak in the current set
         for peak_tuple in match_list:
-            spectrum_id = peak_tuple.scan_num  # Get scan num
-            peak_index = peak_tuple.peak_idx  # Get peak index in the spectrum
+            spectrum_id = peak_tuple.scan_num  # get scan num
+            peak_index = peak_tuple.peak_idx  # get peak index 
             
-            # Get the top 10 peaks for this spectrum
+            # get top 10 peaks for this spectrum
             top_10_peaks = top_10_dic[spectrum_id]['top_10_peaks']
             
-            # Get the mz and intensity of the current peak
+            # get mz and intensity of the current peak
             peak_mz = spec_dic[int(spectrum_id)].mz[int(peak_index)]
             peak_intensity = spec_dic[spectrum_id].intensity[peak_index]
 
-            # Check if the peak is in the top 10
+            # check if the peak is in the top 10
             if (peak_mz, peak_intensity) in top_10_peaks:
                 top_10_count += 1
 
-        # Calculate the percentage of peaks in the set that are in the top 10
+        # calculate the percentage of peaks in the set that are in the top 10
         if total_peaks > 0:
             percent_top_10 = (top_10_count / total_peaks) * 100
         else:
             percent_top_10 = 0
         
-        # Store the result in the dictionary
-        percent_top_10_info[set_index] = {
-            "set_size": total_peaks,
-            "percent": percent_top_10
-        }
+    # add the result to the list
+        percent_top_10_info.append({
+            'set_number': set_index,
+            'set_size': total_peaks,
+            'percent': percent_top_10
+        })
 
-    return percent_top_10_info
+    # create a table
+    table = dash_table.DataTable(
+        data=percent_top_10_info,
+        columns=[
+            {'name': 'Set Number', 'id': 'set_number', 'type': 'numeric'},
+            {'name': 'Set Size', 'id': 'set_size', 'type': 'numeric'},
+            {'name': 'Percent', 'id': 'percent', 'type': 'numeric', 'format': {'specifier': '.2f'}},
+        ],
+        sort_action='native',  # allow for sorting
+        style_table={'overflowX': 'auto'},
+        style_header={'fontWeight': 'bold'},
+        style_cell={'textAlign': 'left', 'padding': '5px'},
+        style_as_list_view=True,
+        page_size=10  # 10 rows per page
+    )
+
+    return table
 
 
 dash_app.layout = html.Div([
@@ -516,19 +534,11 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
     current_order = list(ordered_spec_dic.keys())
     current_order_str = ', '.join(map(str, current_order))
 
-    # Call your function to calculate the percent top 10 for the sets
+    # calculate the percent top 10 for the sets
     percent_top_10_info = calculate_percent_top_10(peak_sets, spec_dic)
 
-    # Generate a string or list of strings to display the information
-    output = []
+    return percent_top_10_info, largest_sets_info, graphs, largest_sets, current_order_str
 
-    for set_number, details in percent_top_10_info.items():
-        set_size = details['set_size']
-        percent = details['percent']
-        output.append(f"Set Number: {set_number}, Set Size: {set_size}, Percent: {percent:.2f}%")
-
-
-    return html.Div([html.P(line) for line in output]), largest_sets_info, graphs, largest_sets, current_order_str
 
 # Setting file-name-input value from the url search parameters
 @dash_app.callback(

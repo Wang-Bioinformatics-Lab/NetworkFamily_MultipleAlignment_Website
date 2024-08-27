@@ -457,57 +457,6 @@ def data_for_json (final_sets, filtered_spec_dic, path):
 
     return json_sets, new_spec_dic
 
-# def data_for_json(final_sets, filtered_spec_dic, path):
-#     # Reorder spec_dic to be in topological order
-#     filtered_spec_dic = {key: filtered_spec_dic[key] for key in path}
-
-#     new_spec_dic = {}
-
-#     # Create a dictionary to map peaks to sets
-#     peak_to_set = {}
-#     for set_idx, match_list in enumerate(final_sets):
-#         for peak_tuple in match_list:
-#             peak_to_set[peak_tuple] = set_idx
-
-#     # Convert spectrum tuple to dictionary
-#     for key, s in filtered_spec_dic.items():
-#         # Get the top 10 peaks based on intensity
-#         top_10_indices = np.argsort(s.intensity)[-10:][::-1]
-#         top_10_mz = [s.mz[i] for i in top_10_indices]
-#         top_10_intensity = [s.intensity[i] for i in top_10_indices]
-
-#         # Add a tag for peaks that are part of a set
-#         peaks_tagged = []
-#         for i, (mz, intensity) in enumerate(zip(s.mz, s.intensity)):
-#             tag = peak_to_set.get(PeakTuple(key, i), None)
-#             peaks_tagged.append({
-#                 "mz": mz,
-#                 "intensity": intensity,
-#                 "in_set": tag is not None,
-#                 "set_id": tag if tag is not None else -1  # -1 indicates no set
-#             })
-
-#         new_spec_dic[int(s.scan)] = {
-#             "scan": int(s.scan),
-#             "precursor_mz": float(s.precursor_mz),
-#             "precursor_charge": int(s.precursor_charge),
-#             "mz": s.mz,
-#             "intensity": s.intensity.tolist(), # convert to list
-#             "top_10_mz": top_10_mz,
-#             "top_10_intensity": top_10_intensity,
-#             "peaks_tagged": peaks_tagged,
-#         }
-
-#     # Change sets to list of lists, each element in the list is a tuple
-#     json_sets = []
-#     for match_list in final_sets:
-#         # Convert sets (list of lists with named tuple) to list of tuples
-#         json_match_list = [peak_tuple_to_tuple(peak_tuple) for peak_tuple in match_list]
-#         json_sets.append(json_match_list)
-
-#     return json_sets, new_spec_dic
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some spectrum data and generate transitively aligned sets.')
     
