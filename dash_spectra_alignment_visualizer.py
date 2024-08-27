@@ -13,6 +13,7 @@ import json
 import os
 
 from config import SETS_TEMP_PATH
+import numpy as np
 
 SpectrumTuple = collections.namedtuple('SpectrumTuple', ['scan', 'precursor_mz', 'precursor_charge', 'mz', 'intensity'])
 PeakTuple = collections.namedtuple('PeakTuple', ['scan_num', 'peak_idx'])
@@ -53,7 +54,62 @@ def _load_peaksets(file_name):
     max_size = max(len(s) for s in peak_sets)
 
     return peak_sets, spec_dic, max_mz, max_size
-    
+
+
+def calculate_percent_top_10(peak_sets, spec_dic):
+    top_10_dic = {}
+    # Convert spectrum tuple to dictionary
+    for key, s in spec_dic.items():
+        # Get the top 10 peaks based on intensity
+        top_10_indices = np.argsort(s.intensity)[-10:][::-1]
+        top_10_mz = [s.mz[i] for i in top_10_indices]
+        top_10_intensity = [s.intensity[i] for i in top_10_indices]
+
+        # Use a set of tuples (mz, intensity) for faster checking
+        top_10_peaks = set(zip(top_10_mz, top_10_intensity))
+
+        top_10_dic[int(s.scan)] = {
+            "scan": int(s.scan),
+            "top_10_peaks": top_10_peaks
+        }
+
+    percent_top_10_info = {}
+
+    # Iterate over each set
+    for set_index, match_list in enumerate(peak_sets):
+        top_10_count = 0  # Counter for peaks that are in the top 10
+        total_peaks = len(match_list)  # Total peaks in this set
+        
+        # Iterate over each peak in the current set
+        for peak_tuple in match_list:
+            spectrum_id = peak_tuple.scan_num  # Get scan num
+            peak_index = peak_tuple.peak_idx  # Get peak index in the spectrum
+            
+            # Get the top 10 peaks for this spectrum
+            top_10_peaks = top_10_dic[spectrum_id]['top_10_peaks']
+            
+            # Get the mz and intensity of the current peak
+            peak_mz = spec_dic[int(spectrum_id)].mz[int(peak_index)]
+            peak_intensity = spec_dic[spectrum_id].intensity[peak_index]
+
+            # Check if the peak is in the top 10
+            if (peak_mz, peak_intensity) in top_10_peaks:
+                top_10_count += 1
+
+        # Calculate the percentage of peaks in the set that are in the top 10
+        if total_peaks > 0:
+            percent_top_10 = (top_10_count / total_peaks) * 100
+        else:
+            percent_top_10 = 0
+        
+        # Store the result in the dictionary
+        percent_top_10_info[set_index] = {
+            "set_size": total_peaks,
+            "percent": percent_top_10
+        }
+
+    return percent_top_10_info
+
 
 dash_app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
@@ -129,6 +185,29 @@ dash_app.layout = html.Div([
                     html.Div(id='largest-sets') 
                 ),
                 id="collapse-largest-sets",
+                is_open=False,
+            ),
+        ],
+        style={'margin-bottom': '20px'}
+    ),
+
+
+    # card for set top 10 percents
+    dbc.Card(
+        [
+            dbc.CardHeader(
+                dbc.Row([
+                    dbc.Col(html.H3("Set Info with Top 10 Peak Intensity Percents", className="card-title", style={'fontSize': '20px'})),
+                    dbc.Col(dbc.Button("Show/Hide", id="toggle-set-percents", color="secondary", size="sm"), width="auto")
+                ], align="center"),
+                style={'border-bottom': '1px solid #ccc'}  
+            ),
+
+            dbc.Collapse(
+                dbc.CardBody(
+                    html.Div(id='percent-top-10-output')
+                ),
+                id="collapse-set-percents",
                 is_open=False,
             ),
         ],
@@ -282,8 +361,7 @@ def update_clicked_peak(clickData, current_data, file_name, custom_order):
             spec_id = list(ordered_spec_dic.keys())[i]
             peak_idx = point['pointIndex']
             return {'scan': spec_id, 'peak_idx': peak_idx}
-    return current_data
-
+    return current_data 
 
 @dash_app.callback(
     Output('set-info', 'children'),
@@ -306,9 +384,10 @@ def display_set_info(clicked_peak, file_name, custom_order):
 
     # find the set containing the clicked peak
     peak_set = None
-    for p_set in peak_sets:
+    for i, p_set in enumerate(peak_sets):
         if (clicked_scan, clicked_idx) in p_set:
             peak_set = p_set
+            set_num = i
             break
 
     if peak_set is None:
@@ -323,32 +402,14 @@ def display_set_info(clicked_peak, file_name, custom_order):
     # get peaks in the custom order
     ordered_peaks = [peaks_dict[scan] for scan in custom_order_list if scan in peaks_dict]
 
-    # # table rows
-    # table_rows = []
-    # for peak in ordered_peaks:
-    #     scan_num = peak[0]
-    #     peak_idx = peak[1]
-    #     precursor_mz = spec_dic[scan_num].precursor_mz
-    #     peak_mz = spec_dic[scan_num].mz[peak_idx]
-    #     peak_intensity = spec_dic[scan_num].intensity[peak_idx]
-
-    #     table_rows.append(
-    #         html.Tr([
-    #             html.Td(scan_num),
-    #             html.Td(peak_idx),
-    #             html.Td(f"{precursor_mz:.3f}"),
-    #             html.Td(f"{peak_mz:.3f}"),
-    #             html.Td(f"{peak_intensity:.3f}")
-    #         ])
-    #     )
-
     data = [
         {
             'Scan #': peak[0],
             'Peak Index': peak[1],
             'Precursor m/z': f"{spec_dic[peak[0]].precursor_mz:.3f}",
             'Peak m/z': f"{spec_dic[peak[0]].mz[peak[1]]:.3f}",
-            'Peak Intensity': f"{spec_dic[peak[0]].intensity[peak[1]]:.3f}"
+            'Peak Intensity': f"{spec_dic[peak[0]].intensity[peak[1]]:.3f}", 
+            'Set Number': set_num
         }
         for peak in ordered_peaks
     ]
@@ -361,6 +422,7 @@ def display_set_info(clicked_peak, file_name, custom_order):
             {'name': 'Precursor m/z', 'id': 'Precursor m/z', 'type': 'numeric'},
             {'name': 'Peak m/z', 'id': 'Peak m/z', 'type': 'numeric'},
             {'name': 'Peak Intensity', 'id': 'Peak Intensity', 'type': 'numeric'},
+            {'name': 'Set Number', 'id': 'Set Number', 'type': 'numeric'},
         ],
         sort_action='native',
         style_table={'overflowX': 'auto'},
@@ -374,7 +436,8 @@ def display_set_info(clicked_peak, file_name, custom_order):
 
 # callback for displaying spectra
 @dash_app.callback(
-    [Output('largest-sets', 'children'), 
+    [Output('percent-top-10-output', 'children'),
+     Output('largest-sets', 'children'), 
      Output('graphs-container', 'children'), 
      Output('highlighted-sets', 'data'),
      Output('custom-order-input', 'value')],
@@ -453,7 +516,19 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
     current_order = list(ordered_spec_dic.keys())
     current_order_str = ', '.join(map(str, current_order))
 
-    return largest_sets_info, graphs, largest_sets, current_order_str
+    # Call your function to calculate the percent top 10 for the sets
+    percent_top_10_info = calculate_percent_top_10(peak_sets, spec_dic)
+
+    # Generate a string or list of strings to display the information
+    output = []
+
+    for set_number, details in percent_top_10_info.items():
+        set_size = details['set_size']
+        percent = details['percent']
+        output.append(f"Set Number: {set_number}, Set Size: {set_size}, Percent: {percent:.2f}%")
+
+
+    return html.Div([html.P(line) for line in output]), largest_sets_info, graphs, largest_sets, current_order_str
 
 # Setting file-name-input value from the url search parameters
 @dash_app.callback(
@@ -497,6 +572,17 @@ def toggle_largest_sets(n_clicks, is_open):
     Output("collapse-set-info", "is_open"),
     Input("toggle-set-info", "n_clicks"),
     State("collapse-set-info", "is_open")
+)
+def toggle_largest_sets(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
+
+# call back for collapsing set percents
+@dash_app.callback(
+    Output("collapse-set-percents", "is_open"),
+    Input("toggle-set-percents", "n_clicks"),
+    State("collapse-set-percents", "is_open")
 )
 def toggle_largest_sets(n_clicks, is_open):
     if n_clicks:
