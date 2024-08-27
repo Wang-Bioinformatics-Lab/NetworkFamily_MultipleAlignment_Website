@@ -2,7 +2,7 @@ import networkx as nx
 import collections
 import numpy as np
 import math
-from typing import List, Tuple, Dict, Set
+from typing import List, Tuple
 from itertools import combinations
 import requests
 import io
@@ -276,7 +276,7 @@ def get_topo_path(filtered_spec_dic, df_comp, scan_nums):
         score, peak_matches = _cosine_fast(spec1, spec2, 0.1, True)
         # store results
         alignment_results[spec1_idx, spec2_idx] = peak_matches
-        print(f"scans: {spec1_idx} - {spec2_idx} and match indices: {peak_matches}")
+        # print(f"scans: {spec1_idx} - {spec2_idx} and match indices: {peak_matches}")
         idx = idx + 1
 
     return topo_sorted_nodes, alignment_results

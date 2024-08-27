@@ -188,26 +188,26 @@ dash_app.layout = html.Div([
     ),
 
     # dbc card for largest sets info
-    dbc.Card(
-        [
-            dbc.CardHeader(
-                dbc.Row([
-                    dbc.Col(html.H3("Largest Sets (Top 3)", className="card-title", style={'fontSize': '20px'})),
-                    dbc.Col(dbc.Button("Show/Hide", id="toggle-largest-sets", color="secondary", size="sm"), width="auto")
-                ], align="center"),
-                style={'border-bottom': '1px solid #ccc'}  
-            ),
+    # dbc.Card(
+    #     [
+    #         dbc.CardHeader(
+    #             dbc.Row([
+    #                 dbc.Col(html.H3("Largest Sets (Top 3)", className="card-title", style={'fontSize': '20px'})),
+    #                 dbc.Col(dbc.Button("Show/Hide", id="toggle-largest-sets", color="secondary", size="sm"), width="auto")
+    #             ], align="center"),
+    #             style={'border-bottom': '1px solid #ccc'}  
+    #         ),
 
-            dbc.Collapse(
-                dbc.CardBody(
-                    html.Div(id='largest-sets') 
-                ),
-                id="collapse-largest-sets",
-                is_open=False,
-            ),
-        ],
-        style={'margin-bottom': '20px'}
-    ),
+    #         dbc.Collapse(
+    #             dbc.CardBody(
+    #                 html.Div(id='largest-sets') 
+    #             ),
+    #             id="collapse-largest-sets",
+    #             is_open=False,
+    #         ),
+    #     ],
+    #     style={'margin-bottom': '20px'}
+    # ),
 
 
     # card for set top 10 percents
@@ -215,7 +215,7 @@ dash_app.layout = html.Div([
         [
             dbc.CardHeader(
                 dbc.Row([
-                    dbc.Col(html.H3("Set Info with Top 10 Peak Intensity Percents", className="card-title", style={'fontSize': '20px'})),
+                    dbc.Col(html.H3("Set Info with Top 10 Peak Intensity Percentages", className="card-title", style={'fontSize': '20px'})),
                     dbc.Col(dbc.Button("Show/Hide", id="toggle-set-percents", color="secondary", size="sm"), width="auto")
                 ], align="center"),
                 style={'border-bottom': '1px solid #ccc'}  
@@ -223,7 +223,15 @@ dash_app.layout = html.Div([
 
             dbc.Collapse(
                 dbc.CardBody(
-                    html.Div(id='percent-top-10-output')
+                    dbc.Row([
+                        html.P(
+                            "The table shows the set information, including the set number, set size, "
+                            "and the percentage of peaks within each set that are in the top 10 by intensity.",
+                            style={'margin-bottom': '15px'}
+                        ),
+                        html.Div(id='percent-top-10-output')
+                    ])
+                    
                 ),
                 id="collapse-set-percents",
                 is_open=False,
@@ -455,7 +463,7 @@ def display_set_info(clicked_peak, file_name, custom_order):
 # callback for displaying spectra
 @dash_app.callback(
     [Output('percent-top-10-output', 'children'),
-     Output('largest-sets', 'children'), 
+    #  Output('largest-sets', 'children'), 
      Output('graphs-container', 'children'), 
      Output('highlighted-sets', 'data'),
      Output('custom-order-input', 'value')],
@@ -476,10 +484,10 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
     largest_sets = sorted(peak_sets, key=len, reverse=True)[:3]
 
     # get largest sets information
-    largest_sets_info = []
-    for i, s in enumerate(largest_sets, 1):
-        peaks_info = ', '.join([f'Scan: {p[0]} Peak Index: {p[1]}' for p in s])
-        largest_sets_info.append(html.Div(f'Largest Set {i}, size {len(s)}: {peaks_info}'))
+    # largest_sets_info = []
+    # for i, s in enumerate(largest_sets, 1):
+    #     peaks_info = ', '.join([f'Scan: {p[0]} Peak Index: {p[1]}' for p in s])
+    #     largest_sets_info.append(html.Div(f'Largest Set {i}, size {len(s)}: {peaks_info}'))
 
     ordered_spec_dic = spec_dic
 
@@ -537,8 +545,8 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
     # calculate the percent top 10 for the sets
     percent_top_10_info = calculate_percent_top_10(peak_sets, spec_dic)
 
-    return percent_top_10_info, largest_sets_info, graphs, largest_sets, current_order_str
-
+    # return percent_top_10_info, largest_sets_info, graphs, largest_sets, current_order_str
+    return percent_top_10_info, graphs, largest_sets, current_order_str
 
 # Setting file-name-input value from the url search parameters
 @dash_app.callback(

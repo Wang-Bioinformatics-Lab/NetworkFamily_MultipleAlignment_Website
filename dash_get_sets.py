@@ -141,7 +141,6 @@ def process_and_save_json(n_clicks, task_id, component_number):
     # linkout = dash.dcc.Link('View Alignment', href=f'/spectraalignment?filename={task_id}_{component_number}.json', target='_blank')
 
     # create a link button
-    # linkout = dbc.Button('View Alignment', href=f'/spectraalignment?filename={task_id}_{component_number}.json', target='_blank', color='primary', size = 'sm')
     linkout = html.A(
         dbc.Button('View Alignment', color='primary', size = 'sm'),
         href=f'/spectraalignment?filename={task_id}_{component_number}.json',
