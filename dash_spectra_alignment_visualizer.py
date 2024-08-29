@@ -150,21 +150,18 @@ dash_app.layout = html.Div([
                 dbc.CardBody(
                     dbc.Row([
                         dbc.Col([
-                            # html.Label("File Name", htmlFor='file-name-input'),
                             dbc.Label("File Name", html_for='file-name-input'),
                             dcc.Input(id='file-name-input', type='text', placeholder='Enter the file name', 
                                       style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px', 'border': '1px solid #ccc'}),
                         ], width=12, style={'margin-bottom': '10px'}),
 
                         dbc.Col([
-                            # html.Label("Custom Order (Optional)", htmlFor='custom-order-input'),
                             dbc.Label("Custom Order of Scan Numbers (Optional)", html_for='custom-order-input'),
                             dcc.Input(id='custom-order-input', type='text', placeholder='Enter custom order of scan numbers separated by commas', 
                                       style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px', 'border': '1px solid #ccc'}),
                         ], width=12, style={'margin-bottom': '10px'}),
 
                         dbc.Col([
-                            # html.Label("Select Sorting Order (Optional)", htmlFor='sort-order-dropdown'),
                             dbc.Label("Select Sorting Order (Optional)", html_for='sort-order-dropdown'),
                             dcc.Dropdown(
                                 id='sort-order-dropdown',
@@ -178,6 +175,18 @@ dash_app.layout = html.Div([
                                 style={'fontSize': '14px'}
                             ),
                         ], width=12, style={'margin-bottom': '10px'}),
+
+                        dbc.Col([
+                            dbc.Label("X-axis Lower Limit (Optional)", html_for='lower-lim-input'),
+                            dcc.Input(id='lower-lim-input', type='text', placeholder='Enter the minimum mz', 
+                                      style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px', 'border': '1px solid #ccc'})
+                        ], width=12, style={'margin-bottom': '10px'}),
+
+                        dbc.Col([
+                            dbc.Label("X-axis Upper Limit (Optional)", html_for='upper-lim-input'),
+                            dcc.Input(id='upper-lim-input', type='text', placeholder='Enter the maximum mz', 
+                                      style={'width': '100%', 'fontSize': '14px', 'padding': '5px', 'borderRadius': '5px', 'border': '1px solid #ccc'})
+                        ], width=12, style={'margin-bottom': '10px'})
                     ])
                 ),
                 id="collapse-input",
@@ -244,7 +253,7 @@ dash_app.layout = html.Div([
 ])
 
 # function to create a spectrum figure
-def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_labels, max_mz, sets, spec_dic):
+def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_labels, max_mz, sets, spec_dic, lower_lim, upper_lim):
     fig = go.Figure()
     mz = spectrum.mz
     intensities = spectrum.intensity
@@ -330,9 +339,16 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
         margin=dict(t=0, b=0, l=0, r=0)
     )
 
-    # set range for x-axis to make all graphs consistent
-    fig.update_xaxes(range=[0, max_mz], showticklabels=show_x_labels)
-
+    # set range for x-axis 
+    if lower_lim and upper_lim:
+        fig.update_xaxes(range=[lower_lim, upper_lim], showticklabels=show_x_labels)
+    elif lower_lim:
+        fig.update_xaxes(range=[lower_lim, max_mz], showticklabels=show_x_labels)
+    elif upper_lim:
+        fig.update_xaxes(range=[0, upper_lim], showticklabels=show_x_labels)
+    else:
+        fig.update_xaxes(range=[0, max_mz], showticklabels=show_x_labels)
+    
     return fig
 
 # callback for clicked peak
@@ -413,6 +429,7 @@ def display_set_info(clicked_peak, file_name, custom_order):
         for peak in ordered_peaks
     ]
 
+    # create table
     table = dash_table.DataTable(
         data = data,
         columns = [
@@ -445,10 +462,12 @@ def display_set_info(clicked_peak, file_name, custom_order):
     State('file-name-input', 'value'),
     State('custom-order-input', 'value'),
     State('sort-order-dropdown', 'value'),
+    Input('lower-lim-input', 'value'),
+    Input('upper-lim-input', 'value'),
     prevent_initial_call=True
 )
 
-def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order):    
+def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order, lower_lim, upper_lim):    
     file_name = os.path.join(SETS_TEMP_PATH, file_name)
 
     peak_sets, spec_dic, max_mz, max_size = _load_peaksets(file_name)
@@ -482,7 +501,7 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
     for i, (scan, spectrum) in enumerate(ordered_spec_dic.items()):
         # only show x axis label for the last spectrum
         show_x_labels = (i == len(spec_dic) - 1)
-        fig = make_spectrum_fig(spectrum, scan, largest_sets, clicked_peak, show_x_labels, max_mz, peak_sets, spec_dic)
+        fig = make_spectrum_fig(spectrum, scan, largest_sets, clicked_peak, show_x_labels, max_mz, peak_sets, spec_dic, lower_lim, upper_lim)
         graphs.append(
             html.Div([
                 html.Div(
@@ -515,7 +534,6 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order)
     sets_info = f'The table below displays the information for {len(peak_sets)} sets, as well as the percentage of peaks within each set that are in the top 10 intensities per spectrum'
 
     return percent_top_10_info, sets_info, graphs, largest_sets, current_order_str
-    # return percent_top_10_info, graphs, largest_sets, current_order_str
 
 # Setting file-name-input value from the url search parameters
 @dash_app.callback(
