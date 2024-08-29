@@ -29,17 +29,10 @@ dash_app = dash.Dash(
     external_stylesheets=[dbc.themes.BOOTSTRAP],
 )
 
-# dash_app.layout = html.Div([
-#     dcc.Location(id='url', refresh=False),
-#     dcc.Input(id='task-id-input', type='text', placeholder='Enter task ID', value="c198b31cb3e241ccbf1d7fc2dd9af0c7"),
-#     dcc.Input(id='component-input', type='text', placeholder='Enter component number', value="1"),
-#     html.Button('Process and Save JSON', id='process-button'),
-#     html.Div(id='output-path')
-# ])
-
 
 dash_app.layout = dbc.Container(
     [
+        dcc.Location(id='url', refresh=False),
         dbc.Row(
             dbc.Col(
                 html.H1("Molecular Networking Peak Alignment", style={'textAlign': 'center',  'padding': '10px'}),
