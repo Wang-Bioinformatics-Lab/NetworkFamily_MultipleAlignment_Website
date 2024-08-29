@@ -336,7 +336,7 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
         barmode='overlay',
         showlegend=False,
         height=100,  # adjust if needed
-        margin=dict(t=0, b=0, l=0, r=0)
+        margin=dict(t=0, b=0, l=0, r=20)
     )
 
     # set range for x-axis 
