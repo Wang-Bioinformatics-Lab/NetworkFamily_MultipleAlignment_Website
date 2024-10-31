@@ -12,8 +12,8 @@ import dash_bootstrap_components as dbc
 
 from app import app
 
-from alignment import get_data, get_topo_path, get_sets, new_matches, add_pairs, data_for_json
-from usi import usi_processing
+from alignment import get_topo_path, get_sets, new_matches, add_pairs, data_for_json
+from usi import usi_processing, parse_usi
 
 
 SpectrumTuple = collections.namedtuple(
@@ -53,10 +53,10 @@ dash_app.layout = dbc.Container(
                                     [
                                         dbc.Label("USI URLS (comma separated)", html_for="task-id-input"),
                                         dbc.Input(
-                                            id='task-id-input',
+                                            id='usi-input',
                                             type='text',
-                                            placeholder='Enter task ID',
-                                            value="c198b31cb3e241ccbf1d7fc2dd9af0c7",
+                                            placeholder='Enter USI URLS',
+                                            value="",
                                             # style={'width': '100%'},
                                             size='sm'
                                         ),
@@ -93,16 +93,16 @@ dash_app.layout = dbc.Container(
 @dash_app.callback(
     Output('output-path', 'children'),
     [Input('process-button', 'n_clicks')],
-    [State('task-id-input', 'value'), State('component-input', 'value')]
+    [State('usi-input', 'value')]
 )
-def process_and_save_json(n_clicks, task_id, component_number):
-    if n_clicks is None or not task_id or not component_number:
+def process_and_save_json(n_clicks, usi_string):
+    if n_clicks is None or not usi_string:
         return dash.no_update
 
     # Figuring out the full path hashed on task_id and component number
-    SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"{task_id}_{component_number}.json")
+    SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"usi_sets.json")
     
-    filtered_spec_dic, scans = usi_processing(task_id)
+    filtered_spec_dic, scans = usi_processing(usi_string)
     df_comp = 1
     topo_path, alignments = get_topo_path(filtered_spec_dic, df_comp, scans)
     transitive_sets = get_sets(topo_path, alignments)
@@ -112,7 +112,7 @@ def process_and_save_json(n_clicks, task_id, component_number):
 
     with open(SAVE_PATH, 'w') as f:
         # json.dump((component, json_sets, new_spec_dic), f)
-        json.dump((int(component_number), json_sets, new_spec_dic), f)
+        json.dump((df_comp, json_sets, new_spec_dic), f)
     
     output_result = []
 
@@ -123,7 +123,8 @@ def process_and_save_json(n_clicks, task_id, component_number):
     # create a link button
     linkout = html.A(
         dbc.Button('View Alignment', color='primary', size = 'sm'),
-        href=f'/spectraalignment?filename={task_id}_{component_number}.json',
+        # href=f'/spectraalignment?filename={task_id}_{component_number}.json',
+        href=f'/spectraalignment?filename=usi_sets.json',
         target='_blank'
     )
 

@@ -1,6 +1,7 @@
 import collections
 import math
 import requests
+import urllib.parse
 
 from alignment import norm_intensity
 
@@ -14,13 +15,15 @@ def get_usi_url(usi_url):
     return response.json()
 
 def parse_usi(usi_url):
+    decoded_url = urllib.parse.unquote(usi_url)
+
     try:
-        task_id = usi_url.split("TASK-")[1].split("-")[0]
+        task_id = decoded_url.split("TASK-")[1].split("-")[0]
     except IndexError:
         task_id = "unknown_task"
 
     try:
-        scan = int(usi_url.split("scan:")[1].split("&")[0])
+        scan = int(decoded_url.split("scan:")[1].split("&")[0])
     except (IndexError, ValueError):
         scan = None
 
@@ -37,8 +40,14 @@ def usi_processing(usi_string):
         precursor_mz = float(usi_data.get("precursor_mz", 0.0))
         precursor_charge = int(usi_data.get("precursor_charge", 0))
         task_id, scan = parse_usi(usi_url)  # get task ID and scan number to create unique scan
-        scan_name = f"{task_id}_scan{scan}"
-        scan_names.append(scan_name)  # add scan names to the list
+
+        # for unique taskid-scan names
+        # scan_name = f"{task_id}_scan{scan}"
+        # scan_names.append(scan_name)  # add scan names to the list
+
+        # using scan numbers only for spectrum in one component
+        scan_names.append(int(scan))
+
         peaks = usi_data.get("peaks", [])
 
         mz_array = [peak[0] for peak in peaks]
@@ -56,7 +65,10 @@ def usi_processing(usi_string):
                 filtered_intensities.append(intensity_array[i])
 
         filtered_intensities = [math.sqrt(x) for x in filtered_intensities]
-        spec_dic[scan] = SpectrumTuple(scan_name, precursor_mz, precursor_charge, filtered_mz, 
+        # spec_dic[scan] = SpectrumTuple(scan_name, precursor_mz, precursor_charge, filtered_mz, 
+        #                                norm_intensity(filtered_intensities))
+
+        spec_dic[scan] = SpectrumTuple(int(scan), precursor_mz, precursor_charge, filtered_mz, 
                                        norm_intensity(filtered_intensities))
         
     return spec_dic, scan_names
