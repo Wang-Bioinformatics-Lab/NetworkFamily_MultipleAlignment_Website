@@ -9,21 +9,28 @@ SpectrumTuple = collections.namedtuple(
     "SpectrumTuple", ["scan", "precursor_mz", "precursor_charge", "mz", "intensity"]
 )
 
-def get_usi_url(usi_url):
+def get_usi_url(usi):
+    # base url
+    base_url = "https://metabolomics-usi.gnps2.org/json/?usi1="
+
+    # encode input usi
+    encoded_usi = urllib.parse.quote(usi)
+    # full url
+    usi_url = f"{base_url}{encoded_usi}"
+
     response = requests.get(usi_url)
     response.raise_for_status()
+
     return response.json()
 
-def parse_usi(usi_url):
-    decoded_url = urllib.parse.unquote(usi_url)
-
+def parse_usi(usi):
     try:
-        task_id = decoded_url.split("TASK-")[1].split("-")[0]
+        task_id = usi.split("TASK-")[1].split("-")[0]
     except IndexError:
         task_id = "unknown_task"
 
     try:
-        scan = int(decoded_url.split("scan:")[1].split("&")[0])
+        scan = int(usi.split("scan:")[1].split("&")[0])
     except (IndexError, ValueError):
         scan = None
 
@@ -31,15 +38,16 @@ def parse_usi(usi_url):
 
 def usi_processing(usi_string):
     spec_dic = {}
-    usi_list = usi_string.split(',')
+    # usi_list = usi_string.split(',')
+    usi_list = usi_string.splitlines()
     scan_names = []
     
-    for usi_url in usi_list:
-        usi_data = get_usi_url(usi_url.strip())
+    for usi in usi_list:
+        usi_data = get_usi_url(usi.strip())
 
         precursor_mz = float(usi_data.get("precursor_mz", 0.0))
         precursor_charge = int(usi_data.get("precursor_charge", 0))
-        task_id, scan = parse_usi(usi_url)  # get task ID and scan number to create unique scan
+        task_id, scan = parse_usi(usi)  # get task ID and scan number to create unique scan
 
         # for unique taskid-scan names
         # scan_name = f"{task_id}_scan{scan}"
@@ -49,7 +57,6 @@ def usi_processing(usi_string):
         scan_names.append(int(scan))
 
         peaks = usi_data.get("peaks", [])
-
         mz_array = [peak[0] for peak in peaks]
         intensity_array = [peak[1] for peak in peaks]
 

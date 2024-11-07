@@ -3,6 +3,7 @@ import collections
 from typing import List, Tuple, Dict, Set
 import json
 import uuid
+import hashlib
 from config import SETS_TEMP_PATH
 
 import dash
@@ -51,17 +52,23 @@ dash_app.layout = dbc.Container(
                             [
                                 dbc.Col(
                                     [
-                                        dbc.Label("USI URLS (comma separated)", html_for="task-id-input"),
-                                        dbc.Input(
+                                        # dbc.Label("USI URLS (comma separated)", html_for="task-id-input"),
+                                        # dbc.Input(
+                                        #     id='usi-input',
+                                        #     type='text',
+                                        #     placeholder='Enter USI URLS',
+                                        #     value="",
+                                        #     # style={'width': '100%'},
+                                        #     size='sm'
+                                        # ),
+                                        dbc.Label("USIs (one per line)", html_for="usi-input"),
+                                        dcc.Textarea(
                                             id='usi-input',
-                                            type='text',
-                                            placeholder='Enter USI URLS',
-                                            value="",
-                                            # style={'width': '100%'},
-                                            size='sm'
-                                        ),
+                                            placeholder='Enter each USI on a new line',
+                                            style={'width': '100%', 'height': 150},  # Adjust height as needed
+                                        )
                                     ],
-                                    width=6
+                                    width=8
                                 ),
                                 dbc.Col(
                                     dbc.Button(
@@ -100,7 +107,8 @@ def process_and_save_json(n_clicks, usi_string):
         return dash.no_update
 
     # Figuring out the full path hashed on task_id and component number
-    SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"usi_sets.json")
+    usi_hash = hashlib.md5(usi_string.strip().encode()).hexdigest()
+    SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"{usi_hash}.json")
     
     filtered_spec_dic, scans = usi_processing(usi_string)
     df_comp = 1
