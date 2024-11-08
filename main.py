@@ -2,9 +2,9 @@ from app import app
 
 # This import is necessary to make sure to 
 # tell the flask server where to serve the dash app
-import dash_interface1
-import dash_interface2
+
 import dash_get_sets
+import dash_usi_get_sets
 import dash_spectra_alignment_visualizer
 
 if __name__ == '__main__':
