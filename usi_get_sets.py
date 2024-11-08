@@ -132,7 +132,7 @@ def process_and_save_json(n_clicks, usi_string):
     linkout = html.A(
         dbc.Button('View Alignment', color='primary', size = 'sm'),
         # href=f'/spectraalignment?filename={task_id}_{component_number}.json',
-        href=f'/spectraalignment?filename=usi_sets.json',
+        href=f'/spectraalignment?filename={usi_hash}.json',
         target='_blank'
     )
 
