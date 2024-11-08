@@ -27,7 +27,7 @@ PeakTuple = collections.namedtuple("PeakTuple", ["scan_num", "peak_idx"])
 dash_app = dash.Dash(
     name="setscreation",
     server=app,
-    url_base_pathname="/setscreation/",
+    url_base_pathname="/setscreation_usi/",
     external_stylesheets=[dbc.themes.BOOTSTRAP],
 )
 
