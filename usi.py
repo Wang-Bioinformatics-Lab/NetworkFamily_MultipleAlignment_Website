@@ -1,0 +1,81 @@
+import collections
+import math
+import requests
+import urllib.parse
+
+from alignment import norm_intensity
+
+SpectrumTuple = collections.namedtuple(
+    "SpectrumTuple", ["scan", "precursor_mz", "precursor_charge", "mz", "intensity"]
+)
+
+def get_usi_url(usi):
+    # base url
+    base_url = "https://metabolomics-usi.gnps2.org/json/?usi1="
+
+    # encode input usi
+    encoded_usi = urllib.parse.quote(usi)
+    # full url
+    usi_url = f"{base_url}{encoded_usi}"
+
+    response = requests.get(usi_url)
+    response.raise_for_status()
+
+    return response.json()
+
+def parse_usi(usi):
+    try:
+        task_id = usi.split("TASK-")[1].split("-")[0]
+    except IndexError:
+        task_id = "unknown_task"
+
+    try:
+        scan = int(usi.split("scan:")[1].split("&")[0])
+    except (IndexError, ValueError):
+        scan = None
+
+    return task_id, scan
+
+def usi_processing(usi_string):
+    spec_dic = {}
+    # usi_list = usi_string.split(',')
+    usi_list = usi_string.splitlines()
+    scan_names = []
+    
+    for usi in usi_list:
+        usi_data = get_usi_url(usi.strip())
+
+        precursor_mz = float(usi_data.get("precursor_mz", 0.0))
+        precursor_charge = int(usi_data.get("precursor_charge", 0))
+        task_id, scan = parse_usi(usi)  # get task ID and scan number to create unique scan
+
+        # for unique taskid-scan names
+        # scan_name = f"{task_id}_scan{scan}"
+        # scan_names.append(scan_name)  # add scan names to the list
+
+        # using scan numbers only for spectrum in one component
+        scan_names.append(int(scan))
+
+        peaks = usi_data.get("peaks", [])
+        mz_array = [peak[0] for peak in peaks]
+        intensity_array = [peak[1] for peak in peaks]
+
+        # from xianghu's mgf_processing function
+        filtered_mz = []
+        filtered_intensities = []
+        for i, mz in enumerate(mz_array):
+            peak_range = [j for j in range(len(mz_array)) if abs(mz_array[j] - mz) <= 25]
+            sorted_range = sorted(peak_range, key=lambda j: intensity_array[j], reverse=True)
+            
+            if i in sorted_range[:6] and abs(mz - precursor_mz) > 17:
+                filtered_mz.append(mz)
+                filtered_intensities.append(intensity_array[i])
+
+        filtered_intensities = [math.sqrt(x) for x in filtered_intensities]
+        # spec_dic[scan] = SpectrumTuple(scan_name, precursor_mz, precursor_charge, filtered_mz, 
+        #                                norm_intensity(filtered_intensities))
+
+        spec_dic[scan] = SpectrumTuple(int(scan), precursor_mz, precursor_charge, filtered_mz, 
+                                       norm_intensity(filtered_intensities))
+        
+    return spec_dic, scan_names
