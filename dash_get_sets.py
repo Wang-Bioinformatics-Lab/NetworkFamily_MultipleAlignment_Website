@@ -34,7 +34,7 @@ dash_app = dash.Dash(
 NAVBAR = dbc.Navbar(
     children=[
         dbc.NavbarBrand(
-            html.Img(src="/assets/GNPS2_logo_blue-grey-black.png", width="120px"),
+            html.Img(src="https://gnps2.org/static/img/gnps2logo.png", width="120px"),
             href="https://www.cs.ucr.edu/~mingxunw/"
         ),
         dbc.Nav(
