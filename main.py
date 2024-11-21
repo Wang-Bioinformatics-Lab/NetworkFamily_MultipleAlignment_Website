@@ -4,7 +4,6 @@ from app import app
 # tell the flask server where to serve the dash app
 
 import dash_get_sets
-import dash_usi_get_sets
 import dash_spectra_alignment_visualizer
 
 if __name__ == '__main__':

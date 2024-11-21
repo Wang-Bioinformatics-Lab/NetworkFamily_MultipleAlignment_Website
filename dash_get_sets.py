@@ -41,7 +41,12 @@ NAVBAR = dbc.Navbar(
             [
                 dbc.NavItem(dbc.NavLink("Multiple Mass Spectral Alignment", href="#")),
             ],
-        navbar=True)
+        navbar=True),
+        dbc.Nav(
+            [
+                dbc.NavItem(dbc.NavLink("Version - 2024.11.21", href="#")),
+            ],
+        navbar=True),
     ],
     color="light",
     dark=False,
@@ -143,6 +148,14 @@ dash_app.layout = dbc.Container(
                                             dcc.Textarea(
                                                 id='usi-input',
                                                 placeholder='Enter each USI on a new line',
+                                                value="""
+mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:4873
+mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:4965
+mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:5325
+mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:5209
+mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:3613
+mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:5610
+"""
                                                 style={'width': '100%', 'height': 150},
                                             )
                                         ],
