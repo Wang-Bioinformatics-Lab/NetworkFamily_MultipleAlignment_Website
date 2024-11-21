@@ -148,8 +148,7 @@ dash_app.layout = dbc.Container(
                                             dcc.Textarea(
                                                 id='usi-input',
                                                 placeholder='Enter each USI on a new line',
-                                                value="""
-mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:4873
+                                                value="""mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:4873
 mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:4965
 mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:5325
 mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:5209
