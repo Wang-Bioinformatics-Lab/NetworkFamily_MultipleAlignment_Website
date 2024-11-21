@@ -155,7 +155,7 @@ mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms
 mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:5209
 mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:3613
 mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms.mgf:scan:5610
-"""
+""",
                                                 style={'width': '100%', 'height': 150},
                                             )
                                         ],
