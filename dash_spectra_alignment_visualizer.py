@@ -265,6 +265,35 @@ dash_app.layout = html.Div([
         style={'margin-bottom': '20px'}
     ),
 
+    # card for select dropdown checkboxes
+    dbc.Card(
+        [
+            dbc.CardHeader(
+                dbc.Row([
+                    dbc.Col(html.H3("Select Spectra", className="card-title", style={'fontSize': '20px'})),
+                    dbc.Col(dbc.Button("Show/Hide", id="toggle-spectra-checklist", color="secondary", size="sm"), width="auto")
+                ], align="center"),
+                style={'border-bottom': '1px solid #ccc'}
+            ),
+            dbc.Collapse(
+                dbc.CardBody(
+                    html.Div([
+                        dcc.Checklist(
+                            id='spectra-checklist',
+                            options=[],  # updated dynamically
+                            value=[],  
+                            inline=True, 
+                            labelStyle={'display': 'inline-block', 'padding': '5px'},
+                        )
+                    ]),
+                ),
+                id="collapse-spectra-checklist",
+                is_open=False # closed
+            ),
+        ],
+        style={'margin-bottom': '20px'}
+    ),
+
     dbc.Col(dbc.Button('Display Spectra', id='display-button', n_clicks=0, color="primary", className="ml-3"), width="auto", style = {'margin-bottom': '20px'}),
     html.Div(id='graphs-container', style={'padding': '0', 'margin': '0'}),
     dcc.Store(id='clicked-peak-store', data={'scan': None, 'peak_idx': None}),
@@ -388,7 +417,18 @@ def update_clicked_peak(clickData, current_data, file_name, custom_order):
     # loading spectra
     peak_sets, spec_dic, max_mz, max_size = _load_peaksets(file_name)
 
-    custom_order_list = [int(scan) for scan in custom_order.split(',')]
+    # custom_order_list = [int(scan) for scan in custom_order.split(',')]
+    
+    # handle edge cases
+    if custom_order:
+        custom_order_list = [scan.strip() for scan in custom_order.split(',') if scan.strip()]
+        try:
+            custom_order_list = [int(scan) for scan in custom_order_list]
+        except ValueError:
+            return current_data 
+    else:
+        custom_order_list = []
+
     ordered_spec_dic = {scan: spec_dic[scan] for scan in custom_order_list if scan in spec_dic}
 
     for i, data in enumerate(clickData):
@@ -471,6 +511,27 @@ def display_set_info(clicked_peak, file_name, custom_order):
 
     return table
 
+# callback for select dropdown checklist
+@dash_app.callback(
+    [Output('spectra-checklist', 'options'),
+     Output('spectra-checklist', 'value')],
+    Input('file-name-input', 'value'),
+    prevent_initial_call=True
+)
+def update_spectra_options(file_name):
+    file_name = os.path.join(SETS_TEMP_PATH, file_name)
+
+    # get peak sets
+    peak_sets, spec_dic, max_mz, max_size = _load_peaksets(file_name)
+
+    # make options (checkbox options)
+    options = [{'label': f'Scan {scan} (Precursor m/z: {spec_dic[scan].precursor_mz:.3f})', 'value': scan} for scan in spec_dic]
+
+    # fill all checkboxes initially
+    value = [scan for scan in spec_dic]
+
+    return options, value
+
 # callback for displaying spectra
 @dash_app.callback(
     [Output('percent-top-10-output', 'children'),
@@ -485,10 +546,10 @@ def display_set_info(clicked_peak, file_name, custom_order):
     State('sort-order-dropdown', 'value'),
     Input('lower-lim-input', 'value'),
     Input('upper-lim-input', 'value'),
+    Input('spectra-checklist', 'value'),
     prevent_initial_call=True
 )
-
-def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order, lower_lim, upper_lim):    
+def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order, lower_lim, upper_lim, selected_spectra):    
     file_name = os.path.join(SETS_TEMP_PATH, file_name)
 
     peak_sets, spec_dic, max_mz, max_size = _load_peaksets(file_name)
@@ -498,28 +559,27 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order,
 
     ordered_spec_dic = spec_dic
 
-    if sort_order and sort_order == 'original':
-        ordered_spec_dic = spec_dic
-    elif sort_order == 'desc':
-        ordered_spec_dic = dict(sorted(ordered_spec_dic.items(), key=lambda item: item[1].precursor_mz, reverse=(sort_order == 'desc')))
-    elif sort_order == 'asc':    
-        ordered_spec_dic = dict(sorted(ordered_spec_dic.items(), key=lambda item: item[1].precursor_mz, reverse=(sort_order == 'desc')))
-    elif sort_order == 'custom':
-        # get custom order
+    # default to displaying all spectra if no spectra are selected
+    if not selected_spectra:
+        selected_spectra = list(ordered_spec_dic.keys())
+
+    #  custom order if provided
+    if sort_order == 'custom':
         if custom_order:
-            try:
-                custom_order_list = [int(scan) for scan in custom_order.split(',')]
-            except ValueError:
-                custom_order_list = []
+            custom_order_list = [str(scan) for scan in custom_order.split(',')] 
+            selected_spectra = [int(scan) for scan in custom_order_list if int(scan) in selected_spectra]
         else:
             custom_order_list = []
-        ordered_spec_dic = {scan: spec_dic[scan] for scan in custom_order_list if scan in spec_dic}
-    else:
-        ordered_spec_dic = spec_dic
-
+    # sort bc desc or asc 
+    elif sort_order == 'desc':
+        selected_spectra.sort(key=lambda scan: spec_dic[scan].precursor_mz, reverse=True)
+    elif sort_order == 'asc':
+        selected_spectra.sort(key=lambda scan: spec_dic[scan].precursor_mz)
+    
     graphs = []
 
-    for i, (scan, spectrum) in enumerate(ordered_spec_dic.items()):
+    for i, scan in enumerate(selected_spectra):
+        spectrum = ordered_spec_dic[scan]
         # only show x axis label for the last spectrum
         show_x_labels = (i == len(spec_dic) - 1)
         fig = make_spectrum_fig(spectrum, scan, largest_sets, clicked_peak, show_x_labels, max_mz, peak_sets, spec_dic, lower_lim, upper_lim)
@@ -546,7 +606,7 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order,
         )
 
     # get scan numbers in the current order
-    current_order = list(ordered_spec_dic.keys())
+    current_order = selected_spectra
     current_order_str = ', '.join(map(str, current_order))
 
     # calculate the percent top 10 for the sets
@@ -614,6 +674,18 @@ def toggle_largest_sets(n_clicks, is_open):
     if n_clicks:
         return not is_open
     return is_open
+
+# call back for collapsing select spectra dropdown
+@dash_app.callback(
+    Output("collapse-spectra-checklist", "is_open"),
+    Input("toggle-spectra-checklist", "n_clicks"),
+    State("collapse-spectra-checklist", "is_open"),
+)
+def toggle_checklist(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
+
 
 if __name__ == '__main__':
     app.run(debug=True)
