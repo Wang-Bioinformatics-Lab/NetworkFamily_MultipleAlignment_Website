@@ -14,7 +14,7 @@ import dash_bootstrap_components as dbc
 from app import app
 
 from alignment import get_data, get_topo_path, get_sets, new_matches, add_pairs, data_for_json
-from usi import usi_processing
+from usi import usi_processing, process_fbmn_input
 
 
 SpectrumTuple = collections.namedtuple(
@@ -184,8 +184,76 @@ mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms
                     id="collapse-usi-card",
                     is_open=False
                 )
-            ]
+            ],
+            style={'margin-bottom': '20px'}
         ),
+
+        dbc.Card(
+            [
+                dbc.CardHeader(
+                    dbc.Row([dbc.Col(html.H3("FBMN Task ID and Cluster Number Input", className="card-title", style={'fontSize': '18px'})),
+                             dbc.Col(dbc.Button("Show/Hide", id="toggle-fbmn-card", color="secondary", size="sm"), width="auto")
+                            ])
+                ),
+                dbc.Collapse(
+                    dbc.CardBody(
+                        [
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        [
+                                            dbc.Label("Task ID", html_for="fbmn-id"),
+                                            dbc.Input(
+                                                id='fbmn-id',
+                                                type='text',
+                                                placeholder='Enter task ID',
+                                                value="82c2cca3c239479fab2e99c84babffba",
+                                                # style={'width': '100%'},
+                                                size='sm'
+                                            ),
+                                        ],
+                                        width=6
+                                    ),
+                                    dbc.Col(
+                                        [
+                                            dbc.Label("Cluster Numbers (Comma Separated)", html_for="fbmn-cluster"),
+                                            dbc.Input(
+                                                id='fbmn-cluster',
+                                                type='text',
+                                                placeholder='Enter cluster numbers',
+                                                value="1",
+                                                size="sm" 
+                                            ),
+                                        ],
+                                        width=4,
+                                    ),
+                                    dbc.Col(
+                                        dbc.Button(
+                                            'Process and Save JSON',
+                                            id='process-fbmn-button',
+                                            color='primary',
+                                            size="sm"
+                                        ),
+                                        width=2,
+                                        className="d-flex align-items-end"
+                                    ),
+                                ],
+                                style={'margin-bottom': '10px'}
+                            ),
+                            dbc.Row(
+                                dbc.Col(
+                                    html.Div(id='output-path-fbmn'),
+                                    width=12
+                                )
+                            )
+                        ]
+                    ),
+                    id="collapse-fbmn-card",
+                    is_open=False
+                )
+            ],
+            style={'margin-bottom': '20px'}
+        )
     ],
     fluid=True
 )
@@ -207,6 +275,16 @@ def toggle_task_card(n_clicks, is_open):
     [State("collapse-usi-card", "is_open")]
 )
 def toggle_usi_card(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
+
+@dash_app.callback(
+    Output("collapse-fbmn-card", "is_open"),
+    [Input("toggle-fbmn-card", "n_clicks")],
+    [State("collapse-fbmn-card", "is_open")]
+)
+def toggle_fbmn_card(n_clicks, is_open):
     if n_clicks:
         return not is_open
     return is_open
@@ -297,6 +375,54 @@ def process_usi_json(n_clicks, usi_string):
     output_result.append(linkout)
 
     return output_result
+
+# callback to process fbmn input
+@dash_app.callback(
+    Output('output-path-fbmn', 'children'),
+    [Input('process-fbmn-button', 'n_clicks')],
+    [State('fbmn-id', 'value'), State('fbmn-cluster', 'value')]
+)
+def process_fbmn_json(n_clicks, fbmn_id, cluster_nums):
+    if n_clicks is None or not fbmn_id or not cluster_nums:
+        return dash.no_update
+    
+    cluster_list = [int(cluster.strip()) for cluster in cluster_nums.split(',') if cluster.strip().isdigit()]
+    
+    # Figuring out the full path hashed on task_id and component number
+    fbmn_hash = hashlib.md5(f"{fbmn_id}_{','.join(map(str, cluster_list))}".encode()).hexdigest()
+    SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"{fbmn_hash}.json")
+    
+    filtered_spec_dic, scans = process_fbmn_input(fbmn_id, cluster_nums)
+    df_comp = 1
+    topo_path, alignments = get_topo_path(filtered_spec_dic, df_comp, scans)
+    transitive_sets = get_sets(topo_path, alignments)
+    new_pairs = new_matches(topo_path, filtered_spec_dic)
+    final_sets = add_pairs(transitive_sets, new_pairs)
+    json_sets, new_spec_dic = data_for_json(final_sets, filtered_spec_dic, topo_path)
+
+    with open(SAVE_PATH, 'w') as f:
+        # json.dump((component, json_sets, new_spec_dic), f)
+        json.dump((df_comp, json_sets, new_spec_dic), f)
+    
+    output_result = []
+
+
+    # Create a linkout to the other page with the json file in the url
+    # linkout = dash.dcc.Link('View Alignment', href=f'/spectraalignment?filename={task_id}_{component_number}.json', target='_blank')
+
+    # create a link button
+    linkout = html.A(
+        dbc.Button('View Alignment', color='primary', size = 'sm'),
+        # href=f'/spectraalignment?filename={task_id}_{component_number}.json',
+        href=f'/spectraalignment?filename={fbmn_hash}.json',
+        target='_blank'
+    )
+
+    output_result.append(html.P(f"Saved to {SAVE_PATH}"))
+    output_result.append(linkout)
+
+    return output_result
+
 
 # Setting file-name-input value from the url search parameters
 @dash_app.callback(
