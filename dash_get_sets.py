@@ -14,7 +14,7 @@ import dash_bootstrap_components as dbc
 from app import app
 
 from alignment import get_data, get_topo_path, get_sets, new_matches, add_pairs, data_for_json
-from usi import usi_processing
+from usi import usi_processing, process_fbmn_input
 
 
 SpectrumTuple = collections.namedtuple(
@@ -284,7 +284,7 @@ def toggle_usi_card(n_clicks, is_open):
     [Input("toggle-fbmn-card", "n_clicks")],
     [State("collapse-fbmn-card", "is_open")]
 )
-def toggle_usi_card(n_clicks, is_open):
+def toggle_fbmn_card(n_clicks, is_open):
     if n_clicks:
         return not is_open
     return is_open
@@ -380,17 +380,19 @@ def process_usi_json(n_clicks, usi_string):
 @dash_app.callback(
     Output('output-path-fbmn', 'children'),
     [Input('process-fbmn-button', 'n_clicks')],
-    [State('fbmn-input', 'value')]
+    [State('fbmn-id', 'value'), State('fbmn-cluster', 'value')]
 )
-def process_usi_json(n_clicks, usi_string):
-    if n_clicks is None or not usi_string:
+def process_fbmn_json(n_clicks, fbmn_id, cluster_nums):
+    if n_clicks is None or not fbmn_id or not cluster_nums:
         return dash.no_update
     
-    # Figuring out the full path hashed on task_id and component number
-    usi_hash = hashlib.md5(usi_string.strip().encode()).hexdigest()
-    SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"{usi_hash}.json")
+    cluster_list = [int(cluster.strip()) for cluster in cluster_nums.split(',') if cluster.strip().isdigit()]
     
-    filtered_spec_dic, scans = usi_processing(usi_string)
+    # Figuring out the full path hashed on task_id and component number
+    fbmn_hash = hashlib.md5(f"{fbmn_id}_{','.join(map(str, cluster_list))}".encode()).hexdigest()
+    SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"{fbmn_hash}.json")
+    
+    filtered_spec_dic, scans = process_fbmn_input(fbmn_id, cluster_nums)
     df_comp = 1
     topo_path, alignments = get_topo_path(filtered_spec_dic, df_comp, scans)
     transitive_sets = get_sets(topo_path, alignments)
@@ -412,7 +414,7 @@ def process_usi_json(n_clicks, usi_string):
     linkout = html.A(
         dbc.Button('View Alignment', color='primary', size = 'sm'),
         # href=f'/spectraalignment?filename={task_id}_{component_number}.json',
-        href=f'/spectraalignment?filename={usi_hash}.json',
+        href=f'/spectraalignment?filename={fbmn_hash}.json',
         target='_blank'
     )
 

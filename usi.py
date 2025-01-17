@@ -118,10 +118,8 @@ def process_fbmn_input (task_id, cluster_string):
                 filtered_intensities.append(intensity_array[i])
 
         filtered_intensities = [math.sqrt(x) for x in filtered_intensities]
-        # spec_dic[scan] = SpectrumTuple(scan_name, precursor_mz, precursor_charge, filtered_mz, 
-        #                                norm_intensity(filtered_intensities))
-
-        spec_dic[cluster] = SpectrumTuple(int(cluster), precursor_mz, precursor_charge, filtered_mz, 
+    
+        spec_dic[int(cluster)] = SpectrumTuple(int(cluster), precursor_mz, precursor_charge, filtered_mz, 
                                        norm_intensity(filtered_intensities))
         
     return spec_dic, scan_names
