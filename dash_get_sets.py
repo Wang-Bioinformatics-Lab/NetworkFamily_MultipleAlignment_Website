@@ -14,7 +14,7 @@ import dash_bootstrap_components as dbc
 from app import app
 
 from alignment import get_data, get_topo_path, get_sets, new_matches, add_pairs, data_for_json
-from usi import usi_processing, process_fbmn_input
+from usi import usi_processing, get_scans
 
 
 SpectrumTuple = collections.namedtuple(
@@ -216,9 +216,9 @@ mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms
                                     ),
                                     dbc.Col(
                                         [
-                                            dbc.Label("Cluster Numbers (Comma Separated)", html_for="fbmn-cluster"),
+                                            dbc.Label("Component", html_for="fbmn-component"),
                                             dbc.Input(
-                                                id='fbmn-cluster',
+                                                id='fbmn-component',
                                                 type='text',
                                                 placeholder='Enter cluster numbers',
                                                 value="1",
@@ -380,19 +380,17 @@ def process_usi_json(n_clicks, usi_string):
 @dash_app.callback(
     Output('output-path-fbmn', 'children'),
     [Input('process-fbmn-button', 'n_clicks')],
-    [State('fbmn-id', 'value'), State('fbmn-cluster', 'value')]
+    [State('fbmn-id', 'value'), State('fbmn-component', 'value')]
 )
-def process_fbmn_json(n_clicks, fbmn_id, cluster_nums):
-    if n_clicks is None or not fbmn_id or not cluster_nums:
+def process_fbmn_json(n_clicks, fbmn_id, component):
+    if n_clicks is None or not fbmn_id or not component:
         return dash.no_update
     
-    cluster_list = [int(cluster.strip()) for cluster in cluster_nums.split(',') if cluster.strip().isdigit()]
-    
     # Figuring out the full path hashed on task_id and component number
-    fbmn_hash = hashlib.md5(f"{fbmn_id}_{','.join(map(str, cluster_list))}".encode()).hexdigest()
+    fbmn_hash = hashlib.md5(f"{fbmn_id}_{','.join(map(str, component))}".encode()).hexdigest()
     SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"{fbmn_hash}.json")
     
-    filtered_spec_dic, scans = process_fbmn_input(fbmn_id, cluster_nums)
+    filtered_spec_dic, scans = get_scans(fbmn_id, component)
     df_comp = 1
     topo_path, alignments = get_topo_path(filtered_spec_dic, df_comp, scans)
     transitive_sets = get_sets(topo_path, alignments)
