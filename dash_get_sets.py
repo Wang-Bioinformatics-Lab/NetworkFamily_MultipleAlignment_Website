@@ -191,7 +191,7 @@ mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms
         dbc.Card(
             [
                 dbc.CardHeader(
-                    dbc.Row([dbc.Col(html.H3("FBMN Task ID and Cluster Number Input", className="card-title", style={'fontSize': '18px'})),
+                    dbc.Row([dbc.Col(html.H3("FBMN Task ID and Component Number Input", className="card-title", style={'fontSize': '18px'})),
                              dbc.Col(dbc.Button("Show/Hide", id="toggle-fbmn-card", color="secondary", size="sm"), width="auto")
                             ])
                 ),
