@@ -124,3 +124,25 @@ def process_fbmn_input (task_id, cluster_string):
         
     return spec_dic, scan_names
 
+def get_scans (task_id, component):
+    # get the json data
+    url = f"https://gnps2.org/result?task={task_id}&viewname=clustersummary&json"
+    response = requests.get(url)
+    response.raise_for_status()
+    json_data = response.json()
+
+    # get corresponding cluster indices for the component
+    # cluster_indices = []
+    # for cluster in json_data.get("clusters", []):
+    #     if cluster.get("componentindex") == component:
+    #         cluster_indices.append(cluster.get("clusterindex"))
+
+    cluster_indices = [cluster["cluster index"] for cluster in json_data if cluster.get("component") == str(component)]
+
+
+    # change cluster indices into a string
+    cluster_string = ",".join(map(str, cluster_indices))
+
+    spec_dic, scan_names = process_fbmn_input(task_id, cluster_string)
+
+    return spec_dic, scan_names
