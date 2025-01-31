@@ -133,12 +133,15 @@ def calculate_percent_top_10(peak_sets, spec_dic):
 
     # create a table
     table = dash_table.DataTable(
+        id='top-10-sets-table',
         data=percent_top_10_info,
         columns=[
             {'name': 'Set Number', 'id': 'set_number', 'type': 'numeric'},
             {'name': 'Set Size', 'id': 'set_size', 'type': 'numeric'},
             {'name': 'Percent', 'id': 'percent', 'type': 'numeric', 'format': {'specifier': '.2f'}},
         ],
+        row_selectable='single',  # allow for row selection
+        selected_rows=[],  # default is no row selected
         sort_action='native',  # allow for sorting
         style_table={'overflowX': 'auto'},
         style_header={'fontWeight': 'bold'},
@@ -303,7 +306,7 @@ dash_app.layout = html.Div([
 ])
 
 # function to create a spectrum figure
-def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_labels, max_mz, sets, spec_dic, lower_lim, upper_lim):
+def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_labels, max_mz, sets, spec_dic, lower_lim, upper_lim, selected_set = None):
     fig = go.Figure()
     mz = spectrum.mz
     intensities = spectrum.intensity
@@ -383,6 +386,16 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
                                 arrowhead=2
                             )
                         )
+
+        # # If a set is selected from the table, highlight those peaks in red
+        # if selected_set is not None:
+        #     # Reset the peaks to grey before highlighting the selected set
+        #     colors = ['grey'] * len(mz)
+
+        #     # Highlight the peaks in the selected set (highlight all peaks in the set)
+        #     for peak in sets[selected_set]:  # Get the selected set
+        #         if peak[0] == spec_id:
+        #             colors[peak[1]] = 'red'  # Highlight the peaks from the selected set
 
     # plot the peaks as a bar chart
     fig.add_trace(
@@ -557,6 +570,7 @@ def update_spectra_options(file_name):
      Output('custom-order-input', 'value')],
     Input('display-button', 'n_clicks'),
     Input('clicked-peak-store', 'data'),
+    # Input('top-10-sets-table', 'selected_row'), # for if a row is selected in top 10 sets table
     State('file-name-input', 'value'),
     State('custom-order-input', 'value'),
     State('sort-order-dropdown', 'value'),
@@ -616,7 +630,13 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order,
                 dcc.Graph(
                     figure=fig,
                     id={'type': 'spectrum-bar', 'index': scan},
-                    style={'flex': '1'}
+                    style={'flex': '1'},
+                     config={
+                        'toImageButtonOptions': {
+                            'format': 'svg', # save as svg
+                            'scale': 2 # high res
+                        }
+                    }
                 )
             ], style={'display': 'flex', 'align-items': 'center', 'margin-bottom': '0px'})
         )
@@ -628,9 +648,14 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order,
     # calculate the percent top 10 for the sets
     percent_top_10_info = calculate_percent_top_10(peak_sets, spec_dic)
 
-    sets_info = f'The table below displays the information for {len(peak_sets)} sets, as well as the percentage of peaks within each set that are in the top 10 intensities per spectrum'
+    sets_info = f"""
+    The table below displays the information for {len(peak_sets)} sets, as well as the percentage of peaks within each set that are in the top 10 intensities per spectrum.           
 
-    return percent_top_10_info, sets_info, graphs, largest_sets, current_order_str
+    **Set Number**: An arbitrary identifier (1 to {len(peak_sets)}) assigned to each set.  
+    **Set Size**: The total number of peaks in a set.  
+    **Percent**: The percentage of peaks in this set that rank among the top 10 intensities of their spectra. A higher percentage suggests that the set includes more significant peaks.
+    """
+    return percent_top_10_info, dcc.Markdown(sets_info), graphs, largest_sets, current_order_str
 
 # Setting file-name-input value from the url search parameters
 @dash_app.callback(
