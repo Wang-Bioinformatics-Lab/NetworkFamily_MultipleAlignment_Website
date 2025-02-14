@@ -306,7 +306,7 @@ dash_app.layout = html.Div([
 ])
 
 # function to create a spectrum figure
-def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_labels, max_mz, sets, spec_dic, lower_lim, upper_lim, selected_set = None):
+def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_labels, max_mz, sets, spec_dic, lower_lim, upper_lim):
     fig = go.Figure()
     mz = spectrum.mz
     intensities = spectrum.intensity
@@ -314,7 +314,7 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
     # initialize all peak colors to grey
     colors = ['grey'] * len(mz)
     annotations = []
-
+    
     # highlight top 3 largest sets in red, green, and blue
     for idx, highlight_set in enumerate(highlighted_sets):
         color = ['red', 'green', 'blue'][idx % 3]
@@ -387,16 +387,6 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
                             )
                         )
 
-        # # If a set is selected from the table, highlight those peaks in red
-        # if selected_set is not None:
-        #     # Reset the peaks to grey before highlighting the selected set
-        #     colors = ['grey'] * len(mz)
-
-        #     # Highlight the peaks in the selected set (highlight all peaks in the set)
-        #     for peak in sets[selected_set]:  # Get the selected set
-        #         if peak[0] == spec_id:
-        #             colors[peak[1]] = 'red'  # Highlight the peaks from the selected set
-
     # plot the peaks as a bar chart
     fig.add_trace(
         go.Bar(
@@ -428,18 +418,19 @@ def make_spectrum_fig(spectrum, spec_id, highlighted_sets, clicked_peak, show_x_
     else:
         fig.update_xaxes(range=[0, max_mz], showticklabels=show_x_labels)
     
-    return fig
+    return fig  
 
 # callback for clicked peak
 @dash_app.callback(
     Output('clicked-peak-store', 'data'),
     Input({'type': 'spectrum-bar', 'index': ALL}, 'clickData'),
+    Input('top-10-sets-table', 'selected_rows'), # for if a row is selected in top 10 sets table
     State('clicked-peak-store', 'data'),
     State('file-name-input', 'value'),
     State('custom-order-input', 'value'),
     prevent_initial_call=True
 )
-def update_clicked_peak(clickData, current_data, file_name, custom_order):
+def update_clicked_peak(clickData, selected_rows, current_data, file_name, custom_order):
     # Cleaning up the filename
     file_name = os.path.join(SETS_TEMP_PATH, file_name)
 
@@ -460,12 +451,25 @@ def update_clicked_peak(clickData, current_data, file_name, custom_order):
 
     ordered_spec_dic = {scan: spec_dic[scan] for scan in custom_order_list if scan in spec_dic}
 
-    for i, data in enumerate(clickData):
-        if data and 'points' in data:
-            point = data['points'][0]
-            spec_id = list(ordered_spec_dic.keys())[i]
-            peak_idx = point['pointIndex']
-            return {'scan': spec_id, 'peak_idx': peak_idx}
+    # check if a row was selected in the table
+    if selected_rows:
+        # get corresponding peak set
+        selected_row = peak_sets[selected_rows[0]]
+        
+        if selected_row:
+            scan_id, peak_idx = selected_row[0]
+            print(f"{scan_id}, {peak_idx}")
+            return {'scan': scan_id, 'peak_idx': peak_idx}  # simulate a "click" for this peak
+    else:
+        # if no row is selected, find corresponding peak set of a clicked peak
+        if clickData:
+            for i, data in enumerate(clickData):
+                if data and 'points' in data:
+                    point = data['points'][0]
+                    spec_id = list(ordered_spec_dic.keys())[i]
+                    peak_idx = point['pointIndex']
+                    return {'scan': spec_id, 'peak_idx': peak_idx}
+                
     return current_data 
 
 @dash_app.callback(
@@ -570,7 +574,6 @@ def update_spectra_options(file_name):
      Output('custom-order-input', 'value')],
     Input('display-button', 'n_clicks'),
     Input('clicked-peak-store', 'data'),
-    # Input('top-10-sets-table', 'selected_row'), # for if a row is selected in top 10 sets table
     State('file-name-input', 'value'),
     State('custom-order-input', 'value'),
     State('sort-order-dropdown', 'value'),
@@ -654,6 +657,8 @@ def display_spectra(n_clicks, clicked_peak, file_name, custom_order, sort_order,
     **Set Number**: An arbitrary identifier (1 to {len(peak_sets)}) assigned to each set.  
     **Set Size**: The total number of peaks in a set.  
     **Percent**: The percentage of peaks in this set that rank among the top 10 intensities of their spectra. A higher percentage suggests that the set includes more significant peaks.
+
+    **Peak Set Selection**: Select a peak set to highlight its peaks and visualize its alignments in the graphs below. Once selected, the filled circle will reset, so take note of which set you've chosen.
     """
     return percent_top_10_info, dcc.Markdown(sets_info), graphs, largest_sets, current_order_str
 
@@ -726,7 +731,6 @@ def toggle_checklist(n_clicks, is_open):
     if n_clicks:
         return not is_open
     return is_open
-
 
 if __name__ == '__main__':
     app.run(debug=True)
