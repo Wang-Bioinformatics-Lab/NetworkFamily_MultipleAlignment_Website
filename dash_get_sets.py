@@ -44,7 +44,7 @@ NAVBAR = dbc.Navbar(
         navbar=True),
         dbc.Nav(
             [
-                dbc.NavItem(dbc.NavLink("Version - 2024.11.21", href="#")),
+                dbc.NavItem(dbc.NavLink("Version - 2025.07.11", href="#")),
             ],
         navbar=True),
     ],
