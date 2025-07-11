@@ -24,15 +24,25 @@ def get_usi_url(usi):
     return response.json()
 
 def parse_usi(usi):
-    try:
-        task_id = usi.split("TASK-")[1].split("-")[0]
-    except IndexError:
-        task_id = "unknown_task"
+    task_id = "unknown_task"
+    scan = None
 
-    try:
-        scan = int(usi.split("scan:")[1].split("&")[0])
-    except (IndexError, ValueError):
-        scan = None
+    if "TASK" in usi:
+        try:
+            task_id = usi.split("TASK-")[1].split("-")[0]
+        except IndexError:
+            pass
+
+    if "scan:" in usi:
+        try:
+            scan = int(usi.split("scan:")[1].split("&")[0])
+        except (IndexError, ValueError):
+            pass
+    elif "accession" in usi:
+        try:
+            scan = int(usi.split("accession:")[-1].replace("CCMSLIB", ""))
+        except (IndexError, ValueError):
+            pass
 
     return task_id, scan
 
@@ -54,7 +64,8 @@ def usi_processing(usi_string):
         # scan_names.append(scan_name)  # add scan names to the list
 
         # using scan numbers only for spectrum in one component
-        scan_names.append(int(scan))
+        #scan_names.append(int(scan))
+        scan_names.append(scan)
 
         peaks = usi_data.get("peaks", [])
         mz_array = [peak[0] for peak in peaks]
