@@ -177,8 +177,6 @@ This project is licensed under the Academic Software License © 2024 UCR.
 
 **For Academic/Nonprofit Use**: This software is freely available for educational and academic research purposes. Please see the [LICENSE](LICENSE) file for complete terms and conditions.
 
-**For Commercial Use**: Commercial entities should contact mingxun.wang@cs.ucr.edu or tp@ucr.edu for licensing opportunities.
-
 ### Citation
 
 If you use this software in your research, please include the following acknowledgment in your publications:
