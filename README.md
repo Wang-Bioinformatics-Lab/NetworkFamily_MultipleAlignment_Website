@@ -181,7 +181,7 @@ This project is licensed under the Academic Software License © 2024 UCR.
 
 If you use this software in your research, please include the following acknowledgment in your publications:
 
-> The Software used in this research was created by [INSERT AUTHOR NAMES] of UC Riverside. © 2024 UCR.
+> The Software used in this research was created by [Amy Lau, Mingxun Wang, Xianghu Wang] of UC Riverside. © 2024 UCR.
 
 ## Support
 
