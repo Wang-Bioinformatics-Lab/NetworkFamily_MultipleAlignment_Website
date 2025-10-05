@@ -48,14 +48,10 @@ A web-based application for interactive visualization and analysis of molecular 
    ```bash
    # For development with interactive mode
    make server-compose-interactive
-   
-   # For production deployment
-   make server-compose-production
    ```
 
 3. **Access the application**:
    - Development: `http://localhost:5000`
-   - Production: `http://multiplealignment.gnps2.org`
 
 ### Option 2: Local Installation
 
@@ -144,9 +140,6 @@ make server-compose-interactive
 
 # Development with detached mode
 make server-compose
-
-# Production deployment
-make server-compose-production
 
 # Attach to running container
 make attach
