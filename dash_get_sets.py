@@ -16,7 +16,6 @@ from app import app
 from alignment import get_data, get_topo_path, get_sets, new_matches, add_pairs, data_for_json
 from usi import usi_processing, get_scans
 
-
 SpectrumTuple = collections.namedtuple(
     "SpectrumTuple", ["scan", "precursor_mz", "precursor_charge", "mz", "intensity"]
 )
@@ -41,12 +40,12 @@ NAVBAR = dbc.Navbar(
             [
                 dbc.NavItem(dbc.NavLink("Multiple Mass Spectral Alignment", href="#")),
             ],
-        navbar=True),
+            navbar=True),
         dbc.Nav(
             [
                 dbc.NavItem(dbc.NavLink("Version - 2025.07.11", href="#")),
             ],
-        navbar=True),
+            navbar=True),
     ],
     color="light",
     dark=False,
@@ -59,16 +58,93 @@ dash_app.layout = dbc.Container(
         dcc.Location(id='url', refresh=False),
         dbc.Row(
             dbc.Col(
-                html.H1("Molecular Networking Peak Alignment", style={'textAlign': 'center',  'padding': '10px'}),
+                html.H1("Molecular Networking Peak Alignment", style={'textAlign': 'center', 'padding': '10px'}),
                 width=12
             )
         ),
         dbc.Card(
             [
                 dbc.CardHeader(
-                    dbc.Row([dbc.Col(html.H3("Task ID and Component Number Input", className="card-title", style={'fontSize': '18px'})),
-                             dbc.Col(dbc.Button("Show/Hide", id="toggle-task-card", color="secondary", size="sm"), width="auto")
+                    dbc.Row([dbc.Col(html.H3("Quick Start Guide", className="card-title", style={'fontSize': '20px'})),
+                             dbc.Col(dbc.Button("Show/Hide", id="toggle-instructions", color="secondary", size="sm"),
+                                     width="auto")
+                             ])
+                ),
+                dbc.Collapse(
+                    dbc.CardBody(
+                        [
+                            dbc.Row([
+                                dbc.Col([
+                                    html.H5("📋 How to Use This Tool",
+                                            style={'color': '#2c3e50', 'margin-bottom': '15px'}),
+                                    html.P([
+                                        "This tool helps you visualize and analyze molecular networking peak alignments. ",
+                                        "Choose one of the three input methods below to get started:"
+                                    ], style={'margin-bottom': '15px'}),
+
+                                    html.H6("🔗 Method 1: GNPS Task ID",
+                                            style={'color': '#27ae60', 'margin-top': '15px'}),
+                                    html.Ul([
+                                        html.Li("Enter a GNPS molecular networking Task ID"),
+                                        html.Li("Specify the component number you want to analyze"),
+                                        html.Li("Click 'Process and Save JSON' to generate alignment data")
+                                    ], style={'margin-bottom': '15px'}),
+
+                                    html.H6("🔬 Method 2: Universal Spectrum Identifiers (USI)",
+                                            style={'color': '#3498db', 'margin-top': '15px'}),
+                                    html.Ul([
+                                        html.Li("Paste USI identifiers (one per line) in the text area"),
+                                        html.Li(
+                                            "Each USI should follow the format: mzspec:GNPS2:TASK-<id>-...:scan:<number>"),
+                                        html.Li("Click 'Process and Save JSON' to analyze the spectra")
+                                    ], style={'margin-bottom': '15px'}),
+
+                                    html.H6("🧬 Method 3: Feature-Based Molecular Networking (FBMN)",
+                                            style={'color': '#e74c3c', 'margin-top': '15px'}),
+                                    html.Ul([
+                                        html.Li("Enter your FBMN Task ID"),
+                                        html.Li("Specify component numbers (comma-separated for multiple)"),
+                                        html.Li("Click 'Process and Save JSON' to process the data")
+                                    ], style={'margin-bottom': '15px'}),
+
+                                    html.Hr(),
+                                    html.P([
+                                        html.Strong("After processing: "),
+                                        "Click the 'View Alignment' button to open the interactive visualization where you can:",
+                                        html.Ul([
+                                            html.Li("Click on peaks to highlight matching peaks across spectra"),
+                                            html.Li("View detailed set information and statistics"),
+                                            html.Li("Filter by m/z range and customize spectrum ordering"),
+                                            html.Li("Export high-resolution figures")
+                                        ])
+                                    ], style={'margin-top': '15px'}),
+
+                                    dbc.Alert([
+                                        html.Strong("Need help? "),
+                                        "Check the ",
+                                        html.A("README documentation",
+                                               href="https://github.com/Wang-Bioinformatics-Lab/NetworkFamily_MultipleAlignment_Website/blob/main/README.md#usage",
+                                               target="_blank", style={'color': '#2980b9'}),
+                                        " for detailed instructions and troubleshooting tips."
+                                    ], color="info", style={'margin-top': '15px'})
+                                ], width=12)
                             ])
+                        ]
+                    ),
+                    id="collapse-instructions",
+                    is_open=True
+                )
+            ],
+            style={'margin-bottom': '20px'}
+        ),
+        dbc.Card(
+            [
+                dbc.CardHeader(
+                    dbc.Row([dbc.Col(html.H3("Task ID and Component Number Input", className="card-title",
+                                             style={'fontSize': '18px'})),
+                             dbc.Col(dbc.Button("Show/Hide", id="toggle-task-card", color="secondary", size="sm"),
+                                     width="auto")
+                             ])
                 ),
                 dbc.Collapse(
                     dbc.CardBody(
@@ -99,7 +175,7 @@ dash_app.layout = dbc.Container(
                                                 value="1",
                                                 # className="mb-4",
                                                 # style={'fontSize': '16px'},
-                                                size="sm" 
+                                                size="sm"
                                             ),
                                         ],
                                         width=4,
@@ -135,7 +211,7 @@ dash_app.layout = dbc.Container(
             [
                 dbc.CardHeader(
                     dbc.Row([dbc.Col(html.H3("USI Input", className="card-title", style={'fontSize': '18px'})),
-                             dbc.Col(dbc.Button("Show/Hide", id="toggle-usi-card", color="secondary", size="sm"), width="auto")])
+                             dbc.Col(dbc.Button("Show/Hide", id="toggle-usi-card", color="secondary", size="sm"),width="auto")])
                 ),
                 dbc.Collapse(
                     dbc.CardBody(
@@ -191,9 +267,9 @@ mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms
         dbc.Card(
             [
                 dbc.CardHeader(
-                    dbc.Row([dbc.Col(html.H3("FBMN Task ID and Component Number Input", className="card-title", style={'fontSize': '18px'})),
-                             dbc.Col(dbc.Button("Show/Hide", id="toggle-fbmn-card", color="secondary", size="sm"), width="auto")
-                            ])
+                    dbc.Row([dbc.Col(html.H3("FBMN Task ID and Component Number Input", className="card-title",style={'fontSize': '18px'})),
+                             dbc.Col(dbc.Button("Show/Hide", id="toggle-fbmn-card", color="secondary", size="sm"),width="auto")
+                             ])
                 ),
                 dbc.Collapse(
                     dbc.CardBody(
@@ -222,7 +298,7 @@ mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms
                                                 type='text',
                                                 placeholder='Enter cluster numbers',
                                                 value="1",
-                                                size="sm" 
+                                                size="sm"
                                             ),
                                         ],
                                         width=4,
@@ -259,6 +335,16 @@ mzspec:GNPS2:TASK-c345b38b7d334628847d13eba2860e3e-nf_output/clustering/specs_ms
 )
 
 # callback for show/hide
+@dash_app.callback(
+    Output("collapse-instructions", "is_open"),
+    [Input("toggle-instructions", "n_clicks")],
+    [State("collapse-instructions", "is_open")]
+)
+def toggle_instructions(n_clicks, is_open):
+    if n_clicks:
+        return not is_open
+    return is_open
+
 @dash_app.callback(
     Output("collapse-task-card", "is_open"),
     [Input("toggle-task-card", "n_clicks")],
@@ -301,7 +387,7 @@ def process_task_json(n_clicks, task_id, component_number):
 
     # Figuring out the full path hashed on task_id and component number
     SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"{task_id}_{component_number}.json")
-    
+
     filtered_spec_dic, df_comp, scans = get_data(int(component_number), task_id)
     topo_path, alignments = get_topo_path(filtered_spec_dic, df_comp, scans)
     transitive_sets = get_sets(topo_path, alignments)
@@ -312,16 +398,15 @@ def process_task_json(n_clicks, task_id, component_number):
     with open(SAVE_PATH, 'w') as f:
         # json.dump((component, json_sets, new_spec_dic), f)
         json.dump((int(component_number), json_sets, new_spec_dic), f)
-    
-    output_result = []
 
+    output_result = []
 
     # Create a linkout to the other page with the json file in the url
     # linkout = dash.dcc.Link('View Alignment', href=f'/spectraalignment?filename={task_id}_{component_number}.json', target='_blank')
 
     # create a link button
     linkout = html.A(
-        dbc.Button('View Alignment', color='primary', size = 'sm'),
+        dbc.Button('View Alignment', color='primary', size='sm'),
         href=f'/spectraalignment?filename={task_id}_{component_number}.json',
         target='_blank'
     )
@@ -330,7 +415,7 @@ def process_task_json(n_clicks, task_id, component_number):
     output_result.append(linkout)
 
     return output_result
-    
+
 # callback to process usi input
 @dash_app.callback(
     Output('output-path-usi', 'children'),
@@ -344,7 +429,7 @@ def process_usi_json(n_clicks, usi_string):
     # Figuring out the full path hashed on task_id and component number
     usi_hash = hashlib.md5(usi_string.strip().encode()).hexdigest()
     SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"{usi_hash}.json")
-    
+
     filtered_spec_dic, scans = usi_processing(usi_string)
     df_comp = 1
     topo_path, alignments = get_topo_path(filtered_spec_dic, df_comp, scans)
@@ -356,16 +441,15 @@ def process_usi_json(n_clicks, usi_string):
     with open(SAVE_PATH, 'w') as f:
         # json.dump((component, json_sets, new_spec_dic), f)
         json.dump((df_comp, json_sets, new_spec_dic), f)
-    
-    output_result = []
 
+    output_result = []
 
     # Create a linkout to the other page with the json file in the url
     # linkout = dash.dcc.Link('View Alignment', href=f'/spectraalignment?filename={task_id}_{component_number}.json', target='_blank')
 
     # create a link button
     linkout = html.A(
-        dbc.Button('View Alignment', color='primary', size = 'sm'),
+        dbc.Button('View Alignment', color='primary', size='sm'),
         # href=f'/spectraalignment?filename={task_id}_{component_number}.json',
         href=f'/spectraalignment?filename={usi_hash}.json',
         target='_blank'
@@ -385,11 +469,11 @@ def process_usi_json(n_clicks, usi_string):
 def process_fbmn_json(n_clicks, fbmn_id, component):
     if n_clicks is None or not fbmn_id or not component:
         return dash.no_update
-    
+
     # Figuring out the full path hashed on task_id and component number
     fbmn_hash = hashlib.md5(f"{fbmn_id}_{','.join(map(str, component))}".encode()).hexdigest()
     SAVE_PATH = os.path.join(SETS_TEMP_PATH, f"{fbmn_hash}.json")
-    
+
     filtered_spec_dic, scans = get_scans(fbmn_id, component)
     df_comp = 1
     topo_path, alignments = get_topo_path(filtered_spec_dic, df_comp, scans)
@@ -401,16 +485,15 @@ def process_fbmn_json(n_clicks, fbmn_id, component):
     with open(SAVE_PATH, 'w') as f:
         # json.dump((component, json_sets, new_spec_dic), f)
         json.dump((df_comp, json_sets, new_spec_dic), f)
-    
-    output_result = []
 
+    output_result = []
 
     # Create a linkout to the other page with the json file in the url
     # linkout = dash.dcc.Link('View Alignment', href=f'/spectraalignment?filename={task_id}_{component_number}.json', target='_blank')
 
     # create a link button
     linkout = html.A(
-        dbc.Button('View Alignment', color='primary', size = 'sm'),
+        dbc.Button('View Alignment', color='primary', size='sm'),
         # href=f'/spectraalignment?filename={task_id}_{component_number}.json',
         href=f'/spectraalignment?filename={fbmn_hash}.json',
         target='_blank'
@@ -427,11 +510,10 @@ def process_fbmn_json(n_clicks, fbmn_id, component):
     [
         Output('task-id-input', 'value'),
         Output('component-input', 'value')
-     ],
+    ],
     Input('url', 'search')
 )
 def update_file_name(search):
-
     try:
         # Parsing out the search field to grab the file name
         import urllib.parse
@@ -439,6 +521,6 @@ def update_file_name(search):
         return [params_dict['task'][0], params_dict['component'][0]]
     except:
         return [dash.no_update, dash.no_update]
-    
+
 if __name__ == '__main__':
     app.run(debug=True)
